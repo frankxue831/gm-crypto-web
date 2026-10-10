@@ -127,5 +127,42 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  await p.goto(base);await p.waitForFunction('window.__ready');chk('saved en persists without param',(await p.evaluate(()=>document.documentElement.lang))==='en');
  await p.goto(withQ({lang:'xx'}));await p.waitForFunction('window.__ready');chk('invalid ?lang ignored (keeps saved)',(await p.evaluate(()=>document.documentElement.lang))==='en');
  await ctx.close();report('i18n',X)}
+// ---- how-to row + live self-test badge
+{const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,120)});
+ const BADGE={zh:{ok:'✓ 国标向量自检 11/11',run:'自检中…'},en:{ok:'✓ Self-test 11/11 vs GB/T vectors',run:'Checking…'}};
+ const HOW={zh:['选算法','点「试一下示例」','对照国标结果'],en:['Pick an algorithm','Click "Try an example"','Compare with the standard result']};
+ const mk=async(vp,locale)=>{const o={viewport:vp,locale};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
+  p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
+ for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`;
+  const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  const h=await p.evaluate(()=>{const o=document.getElementById('howto'),r=o.getBoundingClientRect(),lis=[...o.children].map(l=>{const rs=[...l.getClientRects()];const b=l.getBoundingClientRect();return {top:Math.round(b.top),h:b.height,rects:rs.length,txt:l.innerText.replace(/\s+/g,' ').trim()}});
+   const tg=document.getElementById('tagline').getBoundingClientRect(),tr=document.getElementById('try').getBoundingClientRect();
+   return {bottom:r.bottom,vh:innerHeight,lines:new Set(lis.map(l=>l.top)).size,lis,between:r.top>=tg.bottom-1&&r.bottom<=tr.top+1,sw:document.documentElement.scrollWidth,iw:innerWidth}});
+  chk(`howto ${tag}: text`,JSON.stringify(h.lis.map(l=>l.txt.replace(/^\d\s*/,'')))===JSON.stringify(HOW[lg]),h.lis.map(l=>l.txt).join('|'));
+  chk(`howto ${tag}: in first viewport`,h.bottom>0&&h.bottom<=h.vh,h.bottom+'/'+h.vh);
+  chk(`howto ${tag}: between tagline and Try button`,h.between);
+  chk(`howto ${tag}: ≤2 lines, steps unbroken`,h.lines<=(vp.width<500?2:1)&&h.lis.every(l=>l.h<30),h.lines+' lines '+h.lis.map(l=>l.h).join(','));
+  chk(`howto ${tag}: no horizontal overflow`,h.sw<=h.iw,h.sw+'/'+h.iw);
+  await p.waitForFunction(()=>document.getElementById('stbadge').className!=='',null,{timeout:10000}).catch(()=>{});
+  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,col:getComputedStyle(e).color,href:e.getAttribute('href')}});
+  chk(`badge ${tag}: green with real count`,bd.c==='ok'&&bd.t===BADGE[lg].ok&&bd.col==='rgb(26, 127, 55)'&&bd.href==='#s-test',JSON.stringify(bd));
+  const geo=await p.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(),b=document.getElementById('stbadge').getBoundingClientRect(),h=document.querySelector('h1').getBoundingClientRect(),l=document.querySelector('.langs').getBoundingClientRect();
+   const ov=(a,c)=>a.left<c.right&&a.right>c.left&&a.top<c.bottom&&a.bottom>c.top;return {ovLang:ov(b,l),below:b.top>=h.bottom-1,right:b.left>=h.right-1&&b.top<h.bottom,inView:b.bottom<=innerHeight}});
+  chk(`badge ${tag}: no overlap with language buttons`,!geo.ovLang&&geo.inView,JSON.stringify(geo));
+  chk(`badge ${tag}: ${vp.width<500?'under title':'right of title'}`,vp.width<500?geo.below:geo.right,JSON.stringify(geo));
+  if(vp.width===1280){const other=lg==='zh'?'en':'zh';await p.click('#lang-'+other);
+   chk(`badge ${tag}: switches language`,(await p.textContent('#stbadge'))===BADGE[other].ok,await p.textContent('#stbadge'));await p.click('#lang-'+lg);
+   chk(`self-test section untouched by silent run ${tag}`,(await p.textContent('#testsum'))==='');
+   await p.click('#stbadge');await p.waitForTimeout(900);
+   const st=await p.evaluate(()=>({top:document.getElementById('s-test').getBoundingClientRect().top,atEnd:scrollY+innerHeight>=document.documentElement.scrollHeight-2,vis:document.getElementById('s-test').getBoundingClientRect().top<innerHeight-100,hash:location.hash,rows:document.getElementById('results').textContent.split('\n').length}));
+   chk(`badge ${tag}: click scrolls to #s-test and shows per-case results`,(st.top>-5&&st.top<160||st.atEnd&&st.vis)&&st.hash==='#s-test'&&st.rows===11&&(await p.textContent('#testsum')).startsWith('11/11'),JSON.stringify(st))}
+  await ctx.close()}
+ // WASM blocked: badge must never turn green (errors expected here, so no error listeners)
+ for(const lg of ['zh','en']){const ctx=await b.newContext({viewport:{width:1280,height:800}});const p=await ctx.newPage();
+  await p.route(/\.wasm(\?|$)/,r=>r.abort());await p.goto(withQ({lang:lg}));
+  await p.waitForFunction(()=>document.getElementById('stbadge').textContent!=='',null,{timeout:5000}).catch(()=>{});await p.waitForTimeout(1500);
+  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,col:getComputedStyle(e).color}});
+  chk(`wasm blocked ${lg}: badge not green`,bd.c!=='ok'&&!bd.t.startsWith('✓')&&bd.col!=='rgb(26, 127, 55)'&&bd.t!=='',JSON.stringify(bd));await ctx.close()}
+ report('howto+badge',X)}
 report('static',report0);console.log('TOTAL',passed+'/'+total);console.log('errors',JSON.stringify(allErrs));console.log('external',JSON.stringify([...new Set(allExt)]));
 await b.close();process.exit(allOk&&!allErrs.length&&!allExt.length?0:1)})();
