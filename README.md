@@ -2,7 +2,7 @@
 
 纯浏览器的国密算法小工具：**SM3** 哈希、**SM4** ECB/CBC 加解密、**SM2** 密钥生成 / 签名验签 / 加解密，支持 Hex / Base64 切换。
 
-在线使用：https://frankxue831.github.io/gm-crypto-web/
+在线使用：https://www.frankxue.dev/gm-crypto-web/（`frankxue831.github.io/gm-crypto-web/` 会自动跳转到此地址）
 
 > ⚠️ **重要提示 / Warning**
 > - **所有计算均在你的浏览器本地完成（WebAssembly），不上传任何数据。** All computation runs locally in your browser; nothing is uploaded.
