@@ -1,0 +1,18 @@
+[package]
+name = "gm-web"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/frankxue831/gm-crypto-web"
+publish = false
+version = "0.0.0"
+edition = "2021"
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+gmcrypto-core = { git = "https://github.com/frankxue831/gm-crypto-rs", rev = "5562004dcac17409989357d36f45ce7c0d7a48c1" }
+wasm-bindgen = "0.2"
+getrandom = { version = "0.4", features = ["wasm_js", "sys_rng"] }
+rand_core = "0.10"
+[workspace]
+[profile.release]
+opt-level = "s"
+lto = true
