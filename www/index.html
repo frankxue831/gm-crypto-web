@@ -1,39 +1,101 @@
-<!doctype html><html lang="zh"><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>国密在线小工具 (SM2/SM3/SM4)</title>
-<style>body{font:14px system-ui,sans-serif;max-width:900px;margin:20px auto;padding:0 12px}
-.banner{background:#fff3cd;border:1px solid #e0b100;padding:10px;border-radius:6px}
-fieldset{margin:12px 0;border:1px solid #ccc;border-radius:6px}textarea,input[type=text]{width:100%;box-sizing:border-box;font-family:monospace}
-textarea{height:54px}button{margin:4px 4px 4px 0}.err{color:#b00}#results{white-space:pre;font-family:monospace;background:#f4f4f4;padding:8px}</style></head><body>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>国密在线小工具 · SM2 / SM3 / SM4（本地计算）</title>
+<meta name="description" content="纯浏览器国密算法工具：SM3 哈希、SM4 ECB/CBC 加解密、SM2 密钥生成/签名验签/加解密。全部在本地 WebAssembly 中计算，不上传数据。未经审计，请勿使用生产密钥。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b4232a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E%E5%AF%86%3C/text%3E%3C/svg%3E">
+<style>
+:root{--red:#b4232a;--bg:#f6f7f9;--card:#fff;--line:#d9dde3;--muted:#5b6470;--ok:#1a7f37;--err:#b42318}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#1f2328}
+header,main,footer{max-width:920px;margin:0 auto;padding:0 14px}
+header{padding-top:18px}
+h1{font-size:1.45rem;margin:0 0 8px}
+h2{font-size:1.15rem;margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--red);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.notice{background:#fff4e5;border:1px solid #f0b36b;border-radius:8px;padding:10px 12px;font-size:.95rem}
+.notice b{color:#8a3b00}
+.bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:12px 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0}
+h3{font-size:1rem;margin:14px 0 6px;color:var(--muted)}
+label.f{display:block;font-size:.88rem;color:var(--muted);margin:10px 0 3px}
+textarea,input[type=text],select{width:100%;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;min-height:42px}
+textarea{min-height:64px;resize:vertical;word-break:break-all}
+select{width:auto;font-family:inherit}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.out{position:relative}
+.out textarea,.out input{padding-right:78px;background:#fafbfc}
+.copy{position:absolute;right:6px;top:6px;min-height:30px;padding:3px 10px;font-size:.82rem}
+button{font:inherit;min-height:42px;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;touch-action:manipulation}
+button.p{background:var(--red);color:#fff;border-color:var(--red)}
+button.s{min-height:34px;padding:4px 10px;font-size:.88rem}
+button:active{transform:translateY(1px)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.err{color:var(--err);font-size:.9rem;min-height:1.2em;margin:6px 0 0}
+.ok{color:var(--ok)}.bad{color:var(--err)}
+.hint{font-size:.85rem;color:var(--muted);margin:4px 0 0}
+#results{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,monospace;background:#f4f4f4;padding:8px;border-radius:6px;margin-top:8px}
+footer{font-size:.85rem;color:var(--muted);padding:6px 14px 28px}
+footer a,header a{color:var(--red)}
+@media (max-width:520px){h1{font-size:1.2rem}section{padding:12px 10px}.btns button{flex:1 1 auto}}
+</style>
+</head>
+<body>
+<header>
 <h1>国密在线小工具 SM2 / SM3 / SM4</h1>
-<div class="banner" id="banner"><b>⚠ 所有计算均在本地浏览器中完成（WebAssembly），不上传任何数据。</b>底层库 gmcrypto-core <b>未经第三方安全审计</b>，仅供学习/调试，<b>请勿输入生产环境密钥</b>。</div>
-<p>输出编码 / Output encoding:
+<div class="notice" id="banner" role="note"><b>⚠ 本地计算 · 未经审计 · 请勿使用生产密钥。</b>所有计算均在你的浏览器内（WebAssembly）完成，不上传任何数据。底层库 gmcrypto-core 未经第三方安全审计，仅供学习、调试与互操作测试。</div>
+<div class="bar"><span>二进制编码：</span>
 <label><input type="radio" name="enc" value="hex" checked> Hex</label>
 <label><input type="radio" name="enc" value="b64"> Base64</label>
-（二进制输入框也按此编码解析；明文框为 UTF-8 文本）</p>
+<span class="hint">（密钥/IV/密文/签名按此编码；明文为 UTF-8 文本）</span></div>
+</header>
+<main>
+<section id="s-sm3"><h2>SM3 哈希 <button class="s" id="ex-sm3">填入示例</button></h2>
+<label class="f" for="sm3in">输入文本（UTF-8）</label><textarea id="sm3in">abc</textarea>
+<div class="btns"><button class="p" id="sm3go">计算 SM3</button></div>
+<label class="f" for="sm3out">摘要</label><div class="out"><input type="text" id="sm3out" readonly><button class="copy" data-copy="sm3out">复制</button></div>
+<p class="err" id="err-sm3"></p></section>
 
-<fieldset><legend>SM3 哈希</legend>
-文本 (UTF-8)<textarea id="sm3in">abc</textarea>
-<button id="sm3go">计算 SM3</button><input type="text" id="sm3out" readonly></fieldset>
+<section id="s-sm4"><h2>SM4 加解密（ECB / CBC） <button class="s" id="ex-sm4">填入示例</button></h2>
+<div class="row"><label>模式 <select id="sm4mode"><option>ECB</option><option>CBC</option></select></label>
+<label>填充 <select id="sm4pad"><option value="pkcs7">PKCS#7</option><option value="none">无填充（仅 ECB）</option></select></label></div>
+<p class="hint">CBC 固定使用 PKCS#7 填充。</p>
+<label class="f" for="sm4key">密钥 Key（16 字节）</label><input type="text" id="sm4key" value="0123456789abcdeffedcba9876543210">
+<label class="f" for="sm4iv">IV（16 字节，仅 CBC）</label><input type="text" id="sm4iv" value="000102030405060708090a0b0c0d0e0f">
+<label class="f" for="sm4in">输入（加密：明文；解密：密文）</label>
+<label class="hint"><input type="checkbox" id="sm4inbin"> 明文也按二进制编码解析（否则为 UTF-8 文本）</label>
+<textarea id="sm4in"></textarea>
+<div class="btns"><button class="p" id="sm4enc">加密</button><button id="sm4dec">解密</button></div>
+<label class="f" for="sm4out">输出</label><div class="out"><textarea id="sm4out" readonly></textarea><button class="copy" data-copy="sm4out">复制</button></div>
+<p class="err" id="err-sm4"></p></section>
 
-<fieldset><legend>SM4 (ECB / CBC)</legend>
-模式 <select id="sm4mode"><option>ECB</option><option>CBC</option></select>
-填充 <select id="sm4pad"><option value="pkcs7">PKCS#7</option><option value="none">无 (ECB only)</option></select>
-<small>CBC 固定 PKCS#7</small><br>
-Key (16 字节, 编码同上)<input type="text" id="sm4key" value="0123456789abcdeffedcba9876543210">
-IV (16 字节, CBC)<input type="text" id="sm4iv" value="000102030405060708090a0b0c0d0e0f">
-输入 <label><input type="checkbox" id="sm4inbin"> 输入为二进制（按编码解析），否则 UTF-8 文本</label><textarea id="sm4in"></textarea>
-<button id="sm4enc">加密</button><button id="sm4dec">解密（输入为密文）</button>
-<textarea id="sm4out" readonly></textarea></fieldset>
+<section id="s-sm2"><h2>SM2 公钥密码 <button class="s" id="ex-sm2">填入示例</button></h2>
+<h3>密钥</h3>
+<div class="btns"><button id="sm2gen">生成随机密钥对</button></div>
+<label class="f" for="sm2d">私钥（32 字节）</label><div class="out"><input type="text" id="sm2d"><button class="copy" data-copy="sm2d">复制</button></div>
+<label class="f" for="sm2p">公钥（65 字节，04 开头未压缩）</label><div class="out"><input type="text" id="sm2p"><button class="copy" data-copy="sm2p">复制</button></div>
+<h3>签名 / 验签</h3>
+<div class="row"><span>签名者 ID：</span><label><input type="radio" name="idmode" value="def" checked> 默认 1234567812345678</label>
+<label><input type="radio" name="idmode" value="custom"> 自定义</label></div>
+<input type="text" id="sm2id" value="ALICE123@YAHOO.COM" aria-label="自定义 ID">
+<label class="f" for="sm2msg">消息（UTF-8）</label><textarea id="sm2msg">message digest</textarea>
+<div class="btns"><button class="p" id="sm2sign">签名</button><button id="sm2verify">验签</button><span id="sm2vres"></span></div>
+<label class="f" for="sm2sig">签名（DER）</label><div class="out"><input type="text" id="sm2sig"><button class="copy" data-copy="sm2sig">复制</button></div>
+<p class="hint">签名每次使用随机数 k，结果每次不同属正常；示例中的官方固定 k 向量在仓库的 Rust 测试中校验。</p>
+<h3>加密 / 解密</h3>
+<div class="btns"><button class="p" id="sm2enc">用公钥加密消息</button><button id="sm2dec">用私钥解密密文</button></div>
+<label class="f" for="sm2ct">密文（DER，C1C3C2）</label><div class="out"><textarea id="sm2ct"></textarea><button class="copy" data-copy="sm2ct">复制</button></div>
+<label class="f" for="sm2pt">解密结果</label><div class="out"><input type="text" id="sm2pt" readonly><button class="copy" data-copy="sm2pt">复制</button></div>
+<p class="err" id="err-sm2"></p></section>
 
-<fieldset><legend>SM2</legend>
-<button id="sm2gen">生成密钥对</button><br>
-私钥 (32 字节)<input type="text" id="sm2d">公钥 (SEC1 未压缩 65 字节)<input type="text" id="sm2p">
-签名者 ID：<label><input type="radio" name="idmode" value="def" checked> 默认 1234567812345678</label>
-<label><input type="radio" name="idmode" value="custom"> 自定义</label> <input type="text" id="sm2id" style="width:40%" value="ALICE123@YAHOO.COM">
-消息 (UTF-8)<textarea id="sm2msg">message digest</textarea>
-<button id="sm2sign">签名</button><button id="sm2verify">验签</button>
-签名 (DER)<input type="text" id="sm2sig"><span id="sm2vres"></span><br>
-<button id="sm2enc">用公钥加密消息</button><button id="sm2dec">用私钥解密密文</button>
-密文 (DER C1C3C2)<textarea id="sm2ct"></textarea>解密结果<input type="text" id="sm2pt" readonly></fieldset>
-<p class="err" id="err"></p>
-<fieldset><legend>自检 Self-test (KAT)</legend><button id="selftest">运行自检</button><div id="results"></div></fieldset>
-<script type="module" src="app.js"></script></body></html>
+<section id="s-test"><h2>自检 Self-test</h2>
+<button id="selftest">运行自检</button><div id="results"></div></section>
+</main>
+<footer>
+<p>本地计算 · 未经审计 · 请勿使用生产密钥。</p>
+<p>源码：<a href="https://github.com/frankxue831/gm-crypto-web">github.com/frankxue831/gm-crypto-web</a> · 底层库：<a href="https://github.com/frankxue831/gm-crypto-rs/tree/5562004dcac17409989357d36f45ce7c0d7a48c1">gm-crypto-rs v1.16.0 @5562004</a> · MIT / Apache-2.0</p>
+</footer>
+<script type="module" src="app.js"></script>
+</body></html>
