@@ -41,6 +41,11 @@ jobs:
           cargo build --release --locked --target wasm32-unknown-unknown
           wasm-bindgen --target web --out-dir www/pkg target/wasm32-unknown-unknown/release/gm_web.wasm
           ls -l www/pkg
+      - name: Decode share image (og.png is stored as base64 text; the connector used to push cannot carry binary)
+        run: |
+          base64 -d www/og.png.b64 > www/og.png
+          sha256sum www/og.png
+          rm www/og.png.b64
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
