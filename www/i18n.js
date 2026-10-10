@@ -1,0 +1,92 @@
+// All user-visible strings. Keys missing from a language render as ⟦key⟧ (tests detect this).
+const COMMON={'lang.zh':'中','lang.en':'EN','enc.hex':'Hex','enc.b64':'Base64','mode.ecb':'ECB','mode.cbc':'CBC','pad.pkcs7':'PKCS#7',
+ 'foot.repo':'github.com/frankxue831/gm-crypto-web','foot.libname':'gm-crypto-rs v1.16.0 @5562004','foot.license':'MIT / Apache-2.0','w.iv':'IV'};
+export const DICT = {
+zh: {...COMMON,
+ 'meta.title':'国密在线小工具 · SM2 / SM3 / SM4（本地计算）',
+ 'meta.desc':'纯浏览器国密算法工具：SM3 哈希、SM4 ECB/CBC 加解密、SM2 密钥生成/签名验签/加解密。全部在本地 WebAssembly 中计算，不上传数据。未经审计，请勿使用生产密钥。',
+ 'h1':'国密在线小工具 SM2 / SM3 / SM4',
+ 'lang.aria':'切换语言',
+ 'notice.strong':'⚠ 本地计算 · 未经审计 · 请勿使用生产密钥。',
+ 'notice.body':'所有计算均在你的浏览器内（WebAssembly）完成，不上传任何数据。底层库 gmcrypto-core 未经第三方安全审计，仅供学习、调试与互操作测试。',
+ 'enc.label':'二进制编码：','enc.hint':'（密钥/IV/密文/签名按此编码；明文为 UTF-8 文本）',
+ 'ex':'填入示例','copy':'复制','copied':'已复制','copyFail':'复制失败','copyEmpty':'无内容','copy.aria':'复制到剪贴板',
+ 'sm3.h':'SM3 哈希','sm3.in':'输入文本（UTF-8）','sm3.go':'计算 SM3','sm3.out':'摘要（32 字节）',
+ 'sm4.h':'SM4 分组密码（ECB / CBC）','sm4.mode':'模式','sm4.pad':'填充','pad.none':'无填充（仅 ECB）',
+ 'sm4.cbcNote':'CBC 固定使用 PKCS#7 填充。','sm4.key':'密钥 Key（16 字节）','sm4.iv':'IV（16 字节，仅 CBC）',
+ 'sm4.in':'输入（加密：明文；解密：密文）','sm4.bin':'明文也按二进制编码解析（否则为 UTF-8 文本）',
+ 'sm4.enc':'加密','sm4.dec':'解密','sm4.out':'输出','sm4.exNote':'示例：GB/T 32907 标准测试向量（ECB、无填充），加密结果应为 681edf34d206965e86b3e94f536e4246。',
+ 'sm2.h':'SM2 公钥密码','sm2.keys':'密钥对','sm2.gen':'生成随机密钥对','sm2.d':'私钥（32 字节）','sm2.p':'公钥（65 字节，未压缩 04‖x‖y）',
+ 'sm2.sigH':'签名 / 验签','sm2.idLabel':'用户 ID：','sm2.idDef':'默认 1234567812345678','sm2.idCustom':'自定义','sm2.idAria':'自定义用户 ID',
+ 'sm2.msg':'消息（UTF-8）','sm2.sign':'签名','sm2.verify':'验签','sm2.sig':'签名（DER）',
+ 'sm2.sigNote':'签名每次使用随机数 k，结果每次不同属正常；示例为 GB/T 32918.2 附录 A.2 的密钥/ID/消息，官方固定 k 签名向量在仓库的 Rust 测试中校验。',
+ 'sm2.encH':'加密 / 解密','sm2.enc':'用公钥加密消息','sm2.dec':'用私钥解密密文','sm2.ct':'密文 C1C3C2（DER）','sm2.pt':'解密结果',
+ 'sm2.ok':'✅ 验签通过','sm2.bad':'❌ 验签失败',
+ 'test.h':'自检','test.run':'运行自检','pass':'通过','fail':'失败',
+ 'foot.notice':'本地计算 · 未经审计 · 请勿使用生产密钥。','foot.src':'源码：','foot.lib':'底层库：',
+ 'err.prefix':'错误：',
+ 'err.hexChar':p=>`${p.what}含有非法 Hex 字符（只允许 0-9、a-f）`,'err.hexOdd':p=>`${p.what}的 Hex 长度为奇数（每字节需 2 个字符）`,
+ 'err.b64':p=>`${p.what}不是合法的 Base64`,'err.empty':p=>`请填写${p.what}`,'err.len':p=>`${p.what}必须为 ${p.n} 字节（当前 ${p.got} 字节）`,
+ 'err.pub04':'SM2 公钥必须以 04 开头（未压缩格式）','err.idEmpty':'请填写自定义用户 ID',
+ 'err.noPadLen':p=>`无填充模式下明文长度必须是 16 字节的整数倍（当前 ${p.got} 字节）`,'err.ctLen':p=>`密文长度必须是 16 字节的整数倍且非空（当前 ${p.got} 字节）`,
+ 'err.invalidPriv':'私钥无效（须在 1 到 n-2 范围内）','err.invalidPub':'公钥无效（不在 SM2 曲线上）','err.sm2dec':'解密失败（密文或私钥不匹配）',
+ 'err.sm4dec':'解密失败（密文长度或填充错误，或密钥/IV 不对）','err.badPad':'解密失败（PKCS#7 填充错误，密钥可能不对）',
+ 'err.sign':'签名失败','err.encrypt':'加密失败','err.unknown':p=>`未知错误：${p.msg}`,
+ 'w.input':'输入','w.sm4key':'SM4 密钥','w.pt':'明文','w.ct':'密文','w.priv':'SM2 私钥','w.pub':'SM2 公钥','w.sig':'签名','w.sm2ct':'SM2 密文',
+ 't.sm3':'SM3 "abc" 标准向量','t.sm4kat':'SM4 标准向量加密（无填充）','t.sm4katdec':'SM4 标准向量解密','t.sm4pkcs7':'SM4 ECB PKCS#7 往返',
+ 't.sm4cbc':'SM4 CBC 往返','t.sm2key':'SM2 密钥生成（公钥与私钥匹配）','t.sm2def':'SM2 签名/验签（默认 ID）','t.sm2cid':'SM2 签名/验签（自定义 ID）',
+ 't.sm2tamper':'篡改消息后验签失败','t.sm2wrongid':'ID 错误时验签失败','t.sm2enc':'SM2 加密/解密往返',
+},
+en: {...COMMON,
+ 'meta.title':'SM2 / SM3 / SM4 Online Tool · Chinese national crypto (runs locally)',
+ 'meta.desc':'In-browser Chinese national cryptography (ShangMi) tool: SM3 hash, SM4 ECB/CBC encryption, SM2 key generation, signatures and encryption. Everything runs locally in WebAssembly; nothing is uploaded. Unaudited — do not use production keys.',
+ 'h1':'SM2 / SM3 / SM4 Online Tool',
+ 'lang.aria':'Switch language',
+ 'notice.strong':'⚠ Runs locally · Unaudited · Do not use production keys.',
+ 'notice.body':'All computation happens in your browser (WebAssembly); nothing is uploaded. The underlying gmcrypto-core library has not been independently audited — for learning, debugging and interoperability testing only.',
+ 'enc.label':'Binary encoding:','enc.hint':'(keys, IV, ciphertext and signatures use this encoding; plaintext is UTF-8 text)',
+ 'ex':'Fill example','copy':'Copy','copied':'Copied','copyFail':'Copy failed','copyEmpty':'Empty','copy.aria':'Copy to clipboard',
+ 'sm3.h':'SM3 hash','sm3.in':'Input text (UTF-8)','sm3.go':'Compute SM3','sm3.out':'Digest (32 bytes)',
+ 'sm4.h':'SM4 block cipher (ECB / CBC)','sm4.mode':'Mode','sm4.pad':'Padding','pad.none':'None (ECB only)',
+ 'sm4.cbcNote':'CBC always uses PKCS#7 padding.','sm4.key':'Key (16 bytes)','sm4.iv':'IV (16 bytes, CBC only)',
+ 'sm4.in':'Input (encrypt: plaintext; decrypt: ciphertext)','sm4.bin':'Parse plaintext with the binary encoding too (otherwise UTF-8 text)',
+ 'sm4.enc':'Encrypt','sm4.dec':'Decrypt','sm4.out':'Output','sm4.exNote':'Example: GB/T 32907 standard test vector (ECB, no padding); the ciphertext should be 681edf34d206965e86b3e94f536e4246.',
+ 'sm2.h':'SM2 public-key cryptography','sm2.keys':'SM2 key pair','sm2.gen':'Generate random key pair','sm2.d':'Private key (32 bytes)','sm2.p':'Public key (65 bytes, uncompressed 04‖x‖y)',
+ 'sm2.sigH':'SM2 signature / verification','sm2.idLabel':'User ID:','sm2.idDef':'Default 1234567812345678','sm2.idCustom':'Custom','sm2.idAria':'Custom user ID',
+ 'sm2.msg':'Message (UTF-8)','sm2.sign':'Sign','sm2.verify':'Verify','sm2.sig':'Signature (DER)',
+ 'sm2.sigNote':'Each signature uses a fresh random k, so results differ every time. The example uses the key/ID/message from GB/T 32918.2 Appendix A.2; the official fixed-k signature vector is checked in the repository\'s Rust tests.',
+ 'sm2.encH':'Encryption / decryption','sm2.enc':'Encrypt message with public key','sm2.dec':'Decrypt ciphertext with private key','sm2.ct':'Ciphertext C1C3C2 (DER)','sm2.pt':'Decrypted plaintext',
+ 'sm2.ok':'✅ Signature valid','sm2.bad':'❌ Signature invalid',
+ 'test.h':'Self-test','test.run':'Run self-test','pass':'PASS','fail':'FAIL',
+ 'foot.notice':'Runs locally · Unaudited · Do not use production keys.','foot.src':'Source: ','foot.lib':'Library: ',
+ 'err.prefix':'Error: ',
+ 'err.hexChar':p=>`${p.what} contains invalid hex characters (only 0-9, a-f allowed)`,'err.hexOdd':p=>`${p.what} has an odd number of hex digits (2 per byte)`,
+ 'err.b64':p=>`${p.what} is not valid Base64`,'err.empty':p=>`Please enter the ${p.what}`,'err.len':p=>`${p.what} must be ${p.n} bytes (got ${p.got})`,
+ 'err.pub04':'SM2 public key must start with 04 (uncompressed form)','err.idEmpty':'Please enter a custom user ID',
+ 'err.noPadLen':p=>`Without padding, plaintext length must be a multiple of 16 bytes (got ${p.got})`,'err.ctLen':p=>`Ciphertext length must be a non-zero multiple of 16 bytes (got ${p.got})`,
+ 'err.invalidPriv':'Invalid private key (must be in range 1 to n-2)','err.invalidPub':'Invalid public key (not on the SM2 curve)','err.sm2dec':'Decryption failed (ciphertext and private key do not match)',
+ 'err.sm4dec':'Decryption failed (bad length or padding, or wrong key/IV)','err.badPad':'Decryption failed (invalid PKCS#7 padding — wrong key?)',
+ 'err.sign':'Signing failed','err.encrypt':'Encryption failed','err.unknown':p=>`Unexpected error: ${p.msg}`,
+ 'w.input':'Input','w.sm4key':'SM4 key','w.pt':'Plaintext','w.ct':'Ciphertext','w.priv':'SM2 private key','w.pub':'SM2 public key','w.sig':'Signature','w.sm2ct':'SM2 ciphertext',
+ 't.sm3':'SM3 "abc" test vector','t.sm4kat':'SM4 test vector encrypt (no padding)','t.sm4katdec':'SM4 test vector decrypt','t.sm4pkcs7':'SM4 ECB PKCS#7 round trip',
+ 't.sm4cbc':'SM4 CBC round trip','t.sm2key':'SM2 key generation (public matches private)','t.sm2def':'SM2 sign/verify (default ID)','t.sm2cid':'SM2 sign/verify (custom ID)',
+ 't.sm2tamper':'Verification fails for tampered message','t.sm2wrongid':'Verification fails with wrong ID','t.sm2enc':'SM2 encrypt/decrypt round trip',
+}};
+export const LANGS=['zh','en'];
+let cur='zh';
+export const lang=()=>cur;
+export function t(k,p){const v=DICT[cur][k];if(v===undefined)return `⟦${k}⟧`;return typeof v==='function'?v(p||{}):v}
+export function detect(){
+ const q=new URLSearchParams(location.search).get('lang');
+ if(LANGS.includes(q)){try{localStorage.setItem('gmweb.lang',q)}catch{}return q}
+ let s=null;try{s=localStorage.getItem('gmweb.lang')}catch{}
+ if(LANGS.includes(s))return s;
+ const ls=navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||''];
+ return /^zh/i.test(ls[0]||'')?'zh':'en'}
+export function apply(l,save){cur=l;if(save){try{localStorage.setItem('gmweb.lang',l)}catch{}}
+ document.documentElement.lang=l==='zh'?'zh-CN':'en';document.title=t('meta.title');
+ document.querySelector('meta[name=description]').setAttribute('content',t('meta.desc'));
+ document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
+ document.querySelectorAll('[data-i18n-aria]').forEach(e=>e.setAttribute('aria-label',t(e.dataset.i18nAria)));
+ document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.setAttribute('placeholder',t(e.dataset.i18nPh)));
+ document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)))}
