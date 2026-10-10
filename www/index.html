@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>国密在线小工具 (SM2/SM3/SM4)</title>
+<style>body{font:14px system-ui,sans-serif;max-width:900px;margin:20px auto;padding:0 12px}
+.banner{background:#fff3cd;border:1px solid #e0b100;padding:10px;border-radius:6px}
+fieldset{margin:12px 0;border:1px solid #ccc;border-radius:6px}textarea,input[type=text]{width:100%;box-sizing:border-box;font-family:monospace}
+textarea{height:54px}button{margin:4px 4px 4px 0}.err{color:#b00}#results{white-space:pre;font-family:monospace;background:#f4f4f4;padding:8px}</style></head><body>
+<h1>国密在线小工具 SM2 / SM3 / SM4</h1>
+<div class="banner" id="banner"><b>⚠ 所有计算均在本地浏览器中完成（WebAssembly），不上传任何数据。</b>底层库 gmcrypto-core <b>未经第三方安全审计</b>，仅供学习/调试，<b>请勿输入生产环境密钥</b>。</div>
+<p>输出编码 / Output encoding:
+<label><input type="radio" name="enc" value="hex" checked> Hex</label>
+<label><input type="radio" name="enc" value="b64"> Base64</label>
+（二进制输入框也按此编码解析；明文框为 UTF-8 文本）</p>
+
+<fieldset><legend>SM3 哈希</legend>
+文本 (UTF-8)<textarea id="sm3in">abc</textarea>
+<button id="sm3go">计算 SM3</button><input type="text" id="sm3out" readonly></fieldset>
+
+<fieldset><legend>SM4 (ECB / CBC)</legend>
+模式 <select id="sm4mode"><option>ECB</option><option>CBC</option></select>
+填充 <select id="sm4pad"><option value="pkcs7">PKCS#7</option><option value="none">无 (ECB only)</option></select>
+<small>CBC 固定 PKCS#7</small><br>
+Key (16 字节, 编码同上)<input type="text" id="sm4key" value="0123456789abcdeffedcba9876543210">
+IV (16 字节, CBC)<input type="text" id="sm4iv" value="000102030405060708090a0b0c0d0e0f">
+输入 <label><input type="checkbox" id="sm4inbin"> 输入为二进制（按编码解析），否则 UTF-8 文本</label><textarea id="sm4in"></textarea>
+<button id="sm4enc">加密</button><button id="sm4dec">解密（输入为密文）</button>
+<textarea id="sm4out" readonly></textarea></fieldset>
+
+<fieldset><legend>SM2</legend>
+<button id="sm2gen">生成密钥对</button><br>
+私钥 (32 字节)<input type="text" id="sm2d">公钥 (SEC1 未压缩 65 字节)<input type="text" id="sm2p">
+签名者 ID：<label><input type="radio" name="idmode" value="def" checked> 默认 1234567812345678</label>
+<label><input type="radio" name="idmode" value="custom"> 自定义</label> <input type="text" id="sm2id" style="width:40%" value="ALICE123@YAHOO.COM">
+消息 (UTF-8)<textarea id="sm2msg">message digest</textarea>
+<button id="sm2sign">签名</button><button id="sm2verify">验签</button>
+签名 (DER)<input type="text" id="sm2sig"><span id="sm2vres"></span><br>
+<button id="sm2enc">用公钥加密消息</button><button id="sm2dec">用私钥解密密文</button>
+密文 (DER C1C3C2)<textarea id="sm2ct"></textarea>解密结果<input type="text" id="sm2pt" readonly></fieldset>
+<p class="err" id="err"></p>
+<fieldset><legend>自检 Self-test (KAT)</legend><button id="selftest">运行自检</button><div id="results"></div></fieldset>
+<script type="module" src="app.js"></script></body></html>
