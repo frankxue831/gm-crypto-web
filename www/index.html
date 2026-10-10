@@ -3,22 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>国密在线小工具 · SM2 / SM3 / SM4</title>
-<meta name="description" content="">
+<title>国密在线工具 · SM2 / SM3 / SM4 Online Tool</title>
+<meta name="description" content="国密在线工具：在浏览器本地计算 SM2/SM3/SM4，对照国标向量，不上传数据。SM2/SM3/SM4 in your browser — runs locally, nothing uploaded. Unaudited; do not use production keys.">
+<link rel="canonical" href="https://www.frankxue.dev/gm-crypto-web/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.frankxue.dev/gm-crypto-web/">
+<meta property="og:title" content="国密在线工具 · SM2 / SM3 / SM4 Online Tool">
+<meta property="og:description" content="在浏览器里调试 SM2/SM3/SM4，对照国标向量；本地计算，不上传。Debug SM2/SM3/SM4 in your browser against official test vectors — runs locally.">
+<meta property="og:image" content="https://www.frankxue.dev/gm-crypto-web/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="国密在线工具 · SM2 · SM3 · SM4 in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="国密在线工具 · SM2 / SM3 / SM4 Online Tool">
+<meta name="twitter:description" content="在浏览器里调试 SM2/SM3/SM4，对照国标向量；本地计算，不上传。Debug SM2/SM3/SM4 in your browser against official test vectors — runs locally.">
+<meta name="twitter:image" content="https://www.frankxue.dev/gm-crypto-web/og.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b4232a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E%E5%AF%86%3C/text%3E%3C/svg%3E">
 <style>
 :root{--red:#b4232a;--bg:#f6f7f9;--card:#fff;--line:#d9dde3;--muted:#5b6470;--ok:#1a7f37;--err:#b42318}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#1f2328}
-header,main,footer{max-width:1200px;margin:0 auto;padding:0 16px}
+header,main,footer,.navin{max-width:1200px;margin:0 auto;padding:0 16px}
 header{padding-top:18px}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-h1{font-size:1.45rem;margin:0 0 8px}
+h1{font-size:1.45rem;line-height:1.3;margin:0 0 4px}
+.tagline{margin:0 0 10px;color:var(--muted)}
 .langs{display:flex;gap:4px;flex:none}
 .langs button{min-height:34px;padding:4px 10px;font-size:.9rem}
 .langs button[aria-pressed=true]{background:var(--red);color:#fff;border-color:var(--red)}
-h2{font-size:1.15rem;margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--red);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
+#try{font-weight:600;font-size:1rem;padding:10px 20px}
+nav.nav{position:sticky;top:0;z-index:5;background:rgba(246,247,249,.96);border-bottom:1px solid var(--line);margin-bottom:12px}
+.navin{display:flex;gap:4px;overflow-x:auto}
+.navin a{display:inline-block;padding:10px 12px;color:#1f2328;text-decoration:none;font-weight:600;white-space:nowrap;min-height:42px}
+.navin a:hover{color:var(--red)}
+section{scroll-margin-top:56px}
+h2{font-size:1.15rem;margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2 .t{min-width:0}
+h2 .s{flex:none}
+.sh{padding-bottom:6px;border-bottom:2px solid var(--red);margin-bottom:6px}
+.desc{margin:0 0 6px;color:var(--muted);font-size:.9rem}
 .notice{background:#fff4e5;border:1px solid #f0b36b;border-radius:8px;padding:10px 12px;font-size:.95rem}
 .notice b{color:#8a3b00}
 .bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:12px 0}
@@ -27,8 +52,12 @@ main{display:grid;grid-template-columns:1fr;gap:14px}
 section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
 @media (min-width:1000px){main{grid-template-columns:1fr 1fr;align-items:start}#s-test{grid-column:1/-1}}
 h3{font-size:1rem;margin:14px 0 6px;color:var(--muted)}
-label.f{display:block;font-size:.88rem;color:var(--muted);margin:10px 0 3px}
+label.f{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;font-size:.88rem;color:var(--muted);margin:10px 0 3px}
+.meta{font:12px/1.6 ui-monospace,monospace;background:#eef1f4;color:#36404a;border-radius:4px;padding:0 6px}
+.meta.bad{background:#fde8e7;color:var(--err)}
 textarea,input[type=text],select{width:100%;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;min-height:42px}
+textarea.badf,input.badf{border-color:var(--err);background:#fff6f5;box-shadow:0 0 0 1px var(--err)}
+input:disabled{background:#eceff2;color:#8b949e}
 textarea{min-height:64px;resize:vertical;word-break:break-all}
 select{width:auto;font-family:inherit}
 .row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
@@ -43,70 +72,81 @@ button:active{transform:translateY(1px)}
 .err{color:var(--err);font-size:.9rem;min-height:1.2em;margin:6px 0 0}
 .ok{color:var(--ok)}.bad{color:var(--err)}
 .hint{font-size:.85rem;color:var(--muted);margin:4px 0 0}
+.badge{display:inline-block;margin-top:6px;font-size:.9rem;font-weight:600}
+#testsum{font-weight:700;margin:8px 0 0}
 #results{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,monospace;background:#f4f4f4;padding:8px;border-radius:6px;margin-top:8px}
 footer{font-size:.85rem;color:var(--muted);padding:14px 16px 28px}
 footer a{color:var(--red)}
-@media (max-width:520px){h1{font-size:1.2rem}section{padding:12px 10px}.btns button{flex:1 1 auto}}
+@media (max-width:520px){h1{font-size:1.15rem}section{padding:12px 10px}.btns button{flex:1 1 auto}h2{font-size:1.05rem}#try{flex:1 1 auto}}
 </style>
 </head>
 <body>
 <header>
 <div class="top"><h1 data-i18n="h1"></h1>
 <div class="langs" role="group" data-i18n-aria="lang.aria"><button id="lang-zh" data-lang="zh" data-i18n="lang.zh"></button><button id="lang-en" data-lang="en" data-i18n="lang.en"></button></div></div>
+<p class="tagline" id="tagline" data-i18n="tagline"></p>
+<div class="cta"><button class="p" id="try" data-i18n="tryEx"></button></div>
 <div class="notice" id="banner" role="note"><b data-i18n="notice.strong"></b> <span data-i18n="notice.body"></span></div>
 <div class="bar"><span data-i18n="enc.label"></span>
 <label><input type="radio" name="enc" value="hex" checked> <span data-i18n="enc.hex"></span></label>
 <label><input type="radio" name="enc" value="b64"> <span data-i18n="enc.b64"></span></label>
 <span class="hint" data-i18n="enc.hint"></span></div>
 </header>
+<nav class="nav" data-i18n-aria="nav.aria"><div class="navin"><a href="#s-sm3" data-i18n="nav.sm3"></a><a href="#s-sm4" data-i18n="nav.sm4"></a><a href="#s-sm2" data-i18n="nav.sm2"></a><a href="#s-test" data-i18n="nav.test"></a></div></nav>
 <main>
 <div class="col">
-<section id="s-sm3"><h2><span data-i18n="sm3.h"></span> <button class="s" id="ex-sm3" data-i18n="ex"></button></h2>
-<label class="f" for="sm3in" data-i18n="sm3.in"></label><textarea id="sm3in">abc</textarea>
+<section id="s-sm3"><div class="sh"><h2><span class="t" data-i18n="sm3.h" tabindex="-1" id="h-sm3"></span> <button class="s" id="ex-sm3" data-i18n="ex"></button></h2></div>
+<p class="desc" data-i18n="sm3.desc"></p>
+<label class="f" for="sm3in"><span data-i18n="sm3.in"></span><span class="meta" id="m-sm3in"></span></label><textarea id="sm3in">abc</textarea>
 <div class="btns"><button class="p" id="sm3go" data-i18n="sm3.go"></button></div>
-<label class="f" for="sm3out" data-i18n="sm3.out"></label><div class="out"><input type="text" id="sm3out" readonly><button class="copy" data-copy="sm3out" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm3out"><span data-i18n="sm3.out"></span><span class="meta" id="m-sm3out"></span></label><div class="out"><input type="text" id="sm3out" readonly><button class="copy" data-copy="sm3out" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
 <p class="err" id="err-sm3" aria-live="polite"></p></section>
 
-<section id="s-sm4"><h2><span data-i18n="sm4.h"></span> <button class="s" id="ex-sm4" data-i18n="ex"></button></h2>
+<section id="s-sm4"><div class="sh"><h2><span class="t" data-i18n="sm4.h"></span> <button class="s" id="ex-sm4" data-i18n="ex"></button></h2></div>
+<p class="desc" data-i18n="sm4.desc"></p>
 <div class="row"><label><span data-i18n="sm4.mode"></span> <select id="sm4mode"><option value="ECB" data-i18n="mode.ecb"></option><option value="CBC" data-i18n="mode.cbc"></option></select></label>
 <label><span data-i18n="sm4.pad"></span> <select id="sm4pad"><option value="pkcs7" data-i18n="pad.pkcs7"></option><option value="none" data-i18n="pad.none"></option></select></label></div>
 <p class="hint" data-i18n="sm4.cbcNote"></p>
-<label class="f" for="sm4key" data-i18n="sm4.key"></label><input type="text" id="sm4key" value="0123456789abcdeffedcba9876543210">
-<label class="f" for="sm4iv" data-i18n="sm4.iv"></label><input type="text" id="sm4iv" value="000102030405060708090a0b0c0d0e0f">
-<label class="f" for="sm4in" data-i18n="sm4.in"></label>
+<label class="f" for="sm4key"><span data-i18n="sm4.key"></span><span class="meta" id="m-sm4key"></span></label><input type="text" id="sm4key" value="0123456789abcdeffedcba9876543210">
+<label class="f" for="sm4iv"><span data-i18n="sm4.iv"></span><span class="meta" id="m-sm4iv"></span></label><input type="text" id="sm4iv" value="000102030405060708090a0b0c0d0e0f">
+<p class="hint" id="ivnote"></p>
+<label class="f" for="sm4in"><span data-i18n="sm4.in"></span><span class="meta" id="m-sm4in"></span></label>
 <label class="hint"><input type="checkbox" id="sm4inbin"> <span data-i18n="sm4.bin"></span></label>
 <textarea id="sm4in"></textarea>
 <div class="btns"><button class="p" id="sm4enc" data-i18n="sm4.enc"></button><button id="sm4dec" data-i18n="sm4.dec"></button></div>
-<label class="f" for="sm4out" data-i18n="sm4.out"></label><div class="out"><textarea id="sm4out" readonly></textarea><button class="copy" data-copy="sm4out" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm4out"><span data-i18n="sm4.out"></span><span class="meta" id="m-sm4out"></span></label><div class="out"><textarea id="sm4out" readonly></textarea><button class="copy" data-copy="sm4out" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<span class="badge" id="sm4match" aria-live="polite"></span>
 <p class="hint" data-i18n="sm4.exNote"></p>
 <p class="err" id="err-sm4" aria-live="polite"></p></section>
 </div>
 
-<section id="s-sm2"><h2><span data-i18n="sm2.h"></span> <button class="s" id="ex-sm2" data-i18n="ex"></button></h2>
+<section id="s-sm2"><div class="sh"><h2><span class="t" data-i18n="sm2.h"></span> <button class="s" id="ex-sm2" data-i18n="ex"></button></h2></div>
+<p class="desc" data-i18n="sm2.desc"></p>
 <h3 data-i18n="sm2.keys"></h3>
 <div class="btns"><button id="sm2gen" data-i18n="sm2.gen"></button></div>
-<label class="f" for="sm2d" data-i18n="sm2.d"></label><div class="out"><input type="text" id="sm2d"><button class="copy" data-copy="sm2d" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
-<label class="f" for="sm2p" data-i18n="sm2.p"></label><div class="out"><input type="text" id="sm2p"><button class="copy" data-copy="sm2p" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm2d"><span data-i18n="sm2.d"></span><span class="meta" id="m-sm2d"></span></label><div class="out"><input type="text" id="sm2d"><button class="copy" data-copy="sm2d" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm2p"><span data-i18n="sm2.p"></span><span class="meta" id="m-sm2p"></span></label><div class="out"><input type="text" id="sm2p"><button class="copy" data-copy="sm2p" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
 <h3 data-i18n="sm2.sigH"></h3>
 <div class="row"><span data-i18n="sm2.idLabel"></span><label><input type="radio" name="idmode" value="def" checked> <span data-i18n="sm2.idDef"></span></label>
 <label><input type="radio" name="idmode" value="custom"> <span data-i18n="sm2.idCustom"></span></label></div>
 <input type="text" id="sm2id" value="ALICE123@YAHOO.COM" data-i18n-aria="sm2.idAria">
-<label class="f" for="sm2msg" data-i18n="sm2.msg"></label><textarea id="sm2msg">message digest</textarea>
+<label class="f" for="sm2msg"><span data-i18n="sm2.msg"></span><span class="meta" id="m-sm2msg"></span></label><textarea id="sm2msg">message digest</textarea>
 <div class="btns"><button class="p" id="sm2sign" data-i18n="sm2.sign"></button><button id="sm2verify" data-i18n="sm2.verify"></button><span id="sm2vres" aria-live="polite"></span></div>
-<label class="f" for="sm2sig" data-i18n="sm2.sig"></label><div class="out"><input type="text" id="sm2sig"><button class="copy" data-copy="sm2sig" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm2sig"><span data-i18n="sm2.sig"></span><span class="meta" id="m-sm2sig"></span></label><div class="out"><input type="text" id="sm2sig"><button class="copy" data-copy="sm2sig" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
 <p class="hint" data-i18n="sm2.sigNote"></p>
 <h3 data-i18n="sm2.encH"></h3>
 <div class="btns"><button class="p" id="sm2enc" data-i18n="sm2.enc"></button><button id="sm2dec" data-i18n="sm2.dec"></button></div>
-<label class="f" for="sm2ct" data-i18n="sm2.ct"></label><div class="out"><textarea id="sm2ct"></textarea><button class="copy" data-copy="sm2ct" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
-<label class="f" for="sm2pt" data-i18n="sm2.pt"></label><div class="out"><input type="text" id="sm2pt" readonly><button class="copy" data-copy="sm2pt" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm2ct"><span data-i18n="sm2.ct"></span><span class="meta" id="m-sm2ct"></span></label><div class="out"><textarea id="sm2ct"></textarea><button class="copy" data-copy="sm2ct" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
+<label class="f" for="sm2pt"><span data-i18n="sm2.pt"></span><span class="meta" id="m-sm2pt"></span></label><div class="out"><input type="text" id="sm2pt" readonly><button class="copy" data-copy="sm2pt" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
 <p class="err" id="err-sm2" aria-live="polite"></p></section>
 
-<section id="s-test"><h2 data-i18n="test.h"></h2>
-<button id="selftest" data-i18n="test.run"></button><div id="results"></div></section>
+<section id="s-test"><div class="sh"><h2><span class="t" data-i18n="test.h"></span></h2></div>
+<button id="selftest" data-i18n="test.run"></button><p id="testsum"></p><div id="results"></div></section>
 </main>
 <footer>
 <p data-i18n="foot.notice"></p>
 <p><span data-i18n="foot.src"></span><a href="https://github.com/frankxue831/gm-crypto-web" data-i18n="foot.repo"></a> · <span data-i18n="foot.lib"></span><a href="https://github.com/frankxue831/gm-crypto-rs/tree/5562004dcac17409989357d36f45ce7c0d7a48c1" data-i18n="foot.libname"></a> · <span data-i18n="foot.license"></span></p>
+<p><span data-i18n="foot.home"></span><a href="https://www.frankxue.dev/" data-i18n="foot.homeLink"></a></p>
 </footer>
 <script type="module" src="app.js"></script>
 </body></html>
