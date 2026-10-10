@@ -32,6 +32,15 @@ h1{font-size:1.45rem;line-height:1.3;margin:0 0 4px}
 .langs{display:flex;gap:4px;flex:none}
 .langs button{min-height:34px;padding:4px 10px;font-size:.9rem}
 .langs button[aria-pressed=true]{background:var(--red);color:#fff;border-color:var(--red)}
+.ttl{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0}
+.ttl h1{margin:0}
+.top{margin-bottom:4px}
+#stbadge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:999px;font-size:.8rem;font-weight:600;line-height:1.6;text-decoration:none;white-space:nowrap;border:1px solid #9aa3ad;color:#5b6470;background:#f0f2f4}
+#stbadge.ok{border-color:var(--ok);color:var(--ok);background:#e9f6ec}
+#stbadge.bad{border-color:var(--err);color:var(--err);background:#fdecea}
+.howto{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--muted);font-size:.9rem}
+.howto li{white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.howto .n{display:inline-flex;align-items:center;justify-content:center;width:1.25em;height:1.25em;border-radius:50%;background:var(--red);color:#fff;font-size:.75rem;font-weight:700;flex:none}
 .cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
 #try{font-weight:600;font-size:1rem;padding:10px 20px}
 nav.nav{position:sticky;top:0;z-index:5;background:rgba(246,247,249,.96);border-bottom:1px solid var(--line);margin-bottom:12px}
@@ -77,14 +86,15 @@ button:active{transform:translateY(1px)}
 #results{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,monospace;background:#f4f4f4;padding:8px;border-radius:6px;margin-top:8px}
 footer{font-size:.85rem;color:var(--muted);padding:14px 16px 28px}
 footer a{color:var(--red)}
-@media (max-width:520px){h1{font-size:1.15rem}section{padding:12px 10px}.btns button{flex:1 1 auto}h2{font-size:1.05rem}#try{flex:1 1 auto}}
+@media (max-width:520px){.ttl{flex-direction:column;align-items:flex-start}.howto{gap:4px 12px}h1{font-size:1.15rem}section{padding:12px 10px}.btns button{flex:1 1 auto}h2{font-size:1.05rem}#try{flex:1 1 auto}}
 </style>
 </head>
 <body>
 <header>
-<div class="top"><h1 data-i18n="h1"></h1>
+<div class="top"><div class="ttl"><h1 data-i18n="h1"></h1><a id="stbadge" href="#s-test" aria-live="polite"></a></div>
 <div class="langs" role="group" data-i18n-aria="lang.aria"><button id="lang-zh" data-lang="zh" data-i18n="lang.zh"></button><button id="lang-en" data-lang="en" data-i18n="lang.en"></button></div></div>
 <p class="tagline" id="tagline" data-i18n="tagline"></p>
+<ol class="howto" id="howto" data-i18n-aria="howto.aria"><li><span class="n" aria-hidden="true">1</span><span data-i18n="howto.1"></span></li><li><span class="n" aria-hidden="true">2</span><span data-i18n="howto.2"></span></li><li><span class="n" aria-hidden="true">3</span><span data-i18n="howto.3"></span></li></ol>
 <div class="cta"><button class="p" id="try" data-i18n="tryEx"></button></div>
 <div class="notice" id="banner" role="note"><b data-i18n="notice.strong"></b> <span data-i18n="notice.body"></span></div>
 <div class="bar"><span data-i18n="enc.label"></span>

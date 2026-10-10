@@ -53,7 +53,9 @@ const WASM={'invalid private key':'err.invalidPriv','invalid public key':'err.in
  'decrypt failed (bad length/padding)':'err.sm4dec','bad padding':'err.badPad','sign failed':'err.sign','encrypt failed':'err.encrypt'};
 const toErr=x=>x instanceof UErr?x:(m=>WASM[m]?new UErr(WASM[m]):new UErr('err.unknown',{msg:m}))(String(x?.message||x));
 // ---- render state (re-rendered on language switch)
-const errs={sm3:null,sm4:null,sm2:null};let verdict=null,lastResults=null,sm4badge=null;
+const errs={sm3:null,sm4:null,sm2:null};let verdict=null,lastResults=null,sm4badge=null,autoResults=null,stState='run';
+// self-test case list: the badge total comes from here, never from HTML
+const CASES=['t.sm3','t.sm4kat','t.sm4katdec','t.sm4pkcs7','t.sm4cbc','t.sm2key','t.sm2def','t.sm2cid','t.sm2tamper','t.sm2wrongid','t.sm2enc'];
 const fmtErr=e=>t('err.prefix')+t(e.k,{...e.p,...(e.p.w?W(e.p.w):{})});
 function render(){for(const s in errs)$('err-'+s).textContent=errs[s]?fmtErr(errs[s]):'';
  const r=$('sm2vres');r.textContent=verdict===null?'':t(verdict?'sm2.ok':'sm2.bad');r.className=verdict===null?'':verdict?'ok':'bad';
@@ -62,6 +64,9 @@ function render(){for(const s in errs)$('err-'+s).textContent=errs[s]?fmtErr(err
  if(lastResults){const ok=lastResults.filter(x=>x.pass).length;$('testsum').textContent=t('test.summary',{ok,n:lastResults.length});$('testsum').className=ok===lastResults.length?'ok':'bad';
   $('results').textContent=lastResults.map(x=>`${t(x.pass?'pass':'fail')}  ${t(x.k)}${x.info?'  '+x.info:''}`).join('\n')}
  else{$('testsum').textContent='';$('results').textContent=t('test.prompt')}
+ const sb=$('stbadge'),okN=autoResults?autoResults.filter(x=>x.pass).length:0;
+ sb.className=stState==='run'?'':stState;sb.setAttribute('aria-label',t('badge.aria'));
+ sb.textContent=stState==='run'?t('badge.run'):t(stState==='ok'?'badge.ok':'badge.bad',{ok:okN,n:CASES.length});
  metaAll()}
 function setLang(l,save){apply(l,save);render()}
 setLang(detect(),false);
@@ -77,7 +82,8 @@ async function copyText(s){try{await navigator.clipboard.writeText(s);return tru
 document.querySelectorAll('button.copy').forEach(b=>b.addEventListener('click',async()=>{const v=$(b.dataset.copy).value;
  b.textContent=t(!v?'copyEmpty':(await copyText(v))?'copied':'copyFail');
  clearTimeout(b._t);b._t=setTimeout(()=>b.textContent=t('copy'),1500)}));
-await init();
+$('stbadge').addEventListener('click',()=>{if(autoResults){lastResults=autoResults;render()}});
+try{await init()}catch(e){stState='bad';autoResults=[];render();throw e}
 // ---- examples (official vectors)
 const A2D='3945208f7b2144b13f36e38ac6d39f95889393692860b51a42fb81ef4df7c5b8',K16='0123456789abcdeffedcba9876543210',SM4CT='681edf34d206965e86b3e94f536e4246';
 const exSM3=()=>{setText('sm3in','abc');clearF('sm3out')};
@@ -112,7 +118,7 @@ $('try').addEventListener('click',()=>{for(const s in errs)errs[s]=null;
  try{exSM2();doSign();doVerify()}catch(x){errs.sm2=toErr(x)}
  render();$('s-sm3').scrollIntoView({block:'start'});$('h-sm3').focus({preventScroll:true})});
 
-export function selftest(){const R=[];const T=(k,f)=>{let ok,info='';try{const r=f();ok=r===true||r?.[0];info=r?.[1]||''}catch(e){ok=false;info=String(e.message||e)}R.push({k,name:t(k),pass:!!ok,info})};
+function runCases(){const R=[];const T=(k,f)=>{let ok,info='';try{const r=f();ok=r===true||r?.[0];info=r?.[1]||''}catch(e){ok=false;info=String(e.message||e)}R.push({k,name:t(k),pass:!!ok,info})};
  const K=unhex(K16),IV=unhex('000102030405060708090a0b0c0d0e0f');
  T('t.sm3',()=>{const h=hex(g.sm3_hash(te.encode('abc')));return[h==='66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0',h]});
  T('t.sm4kat',()=>{const c=hex(g.sm4_ecb_encrypt(K,K,false));return[c===SM4CT,c]});
@@ -128,5 +134,9 @@ export function selftest(){const R=[];const T=(k,f)=>{let ok,info='';try{const r
  T('t.sm2wrongid',()=>!g.sm2_verify(P,cid,M,g.sm2_sign(d,g.sm2_default_id(),M)));
  const u3='encryption standard 国密';
  T('t.sm2enc',()=>td.decode(g.sm2_decrypt(d,g.sm2_encrypt(P,te.encode(u3))))===u3);
- lastResults=R;render();return R}
+ if(R.length!==CASES.length||R.some((r,i)=>r.k!==CASES[i]))throw new Error('self-test case list out of sync');return R}
+const setAuto=R=>{autoResults=R;stState=R.length===CASES.length&&R.every(x=>x.pass)?'ok':'bad'};
+export function selftest(){const R=runCases();setAuto(R);lastResults=R;render();return R}
+// silent self-test on load: drives the badge only; the self-test section stays untouched until asked
+setTimeout(()=>{try{setAuto(runCases())}catch{autoResults=[];stState='bad'}render()},0);
 window.selftest=selftest;window.__setLang=l=>setLang(l,true);$('selftest').addEventListener('click',selftest);window.__ready=true;
