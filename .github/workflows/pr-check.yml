@@ -1,0 +1,136 @@
+name: PR check
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  WASM_BINDGEN_VERSION: 0.2.129   # must match wasm-bindgen in Cargo.lock (same as pages.yml)
+jobs:
+  browser-tests:          # stable name: require "browser-tests" in branch protection
+    name: browser-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      # ---- build: same steps and toolchain as pages.yml
+      - name: Install toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/wasm-bindgen
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - name: Install wasm-bindgen-cli
+        run: |
+          if ! wasm-bindgen --version 2>/dev/null | grep -q "$WASM_BINDGEN_VERSION"; then
+            cargo install wasm-bindgen-cli --version "$WASM_BINDGEN_VERSION" --locked --force
+          fi
+      - name: Check wasm-bindgen version matches Cargo.lock
+        run: grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | grep -q "version = \"$WASM_BINDGEN_VERSION\""
+      - name: Native tests (incl. GB/T 32918.2 vector)
+        run: cargo test --release --locked
+      - name: Build wasm
+        run: |
+          cargo build --release --locked --target wasm32-unknown-unknown
+          wasm-bindgen --target web --out-dir www/pkg target/wasm32-unknown-unknown/release/gm_web.wasm
+      - name: Decode share image
+        run: base64 -d www/og.png.b64 > www/og.png && rm www/og.png.b64
+      - name: Stamp commit into footer and HTML comment
+        id: stamp
+        run: |
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          SHORT="${SHA:0:7}"
+          sed -i "s/__COMMIT__/$SHORT/g" www/index.html
+          grep -q "<!-- commit: $SHORT -->" www/index.html
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+      # ---- browsers
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install test deps
+        working-directory: pw
+        run: |
+          npm install --no-audit --no-fund
+          echo "PW_VERSION=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_ENV"
+      - uses: actions/cache@v4
+        id: pwcache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PW_VERSION }}
+      - name: Install Playwright browsers
+        if: steps.pwcache.outputs.cache-hit != 'true'
+        working-directory: pw
+        run: npx playwright-core install chromium firefox webkit
+      - name: Install browser system dependencies
+        working-directory: pw
+        run: sudo npx playwright-core install-deps chromium firefox webkit
+      # ---- run the suite: 3 browsers x desktop/mobile; fail at the end if any run failed
+      - name: Run browser tests
+        id: run
+        env:
+          EXPECT_COMMIT: ${{ steps.stamp.outputs.short }}
+        run: |
+          PORT=$(python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1])')
+          python3 -m http.server "$PORT" --bind 127.0.0.1 -d www > server.log 2>&1 &
+          for i in $(seq 50); do curl -sf "http://127.0.0.1:$PORT/" > /dev/null && break; sleep 0.2; done
+          export BASE_URL="http://127.0.0.1:$PORT/"
+          mkdir -p shots logs
+          : > results.md; status=0
+          for br in chromium firefox webkit; do for vp in desktop mobile; do
+            m=""; [ $vp = mobile ] && m=1
+            if [ "$br" = chromium ] && [ $vp = desktop ]; then sd="$PWD/shots"; else sd=""; fi
+            set +e
+            (cd pw && MOBILE=$m SHOTDIR=$sd node run.cjs $br) > logs/$br-$vp.log 2>&1; rc=$?
+            set -e
+            tot=$(grep -oP '^TOTAL \K.*' logs/$br-$vp.log || echo "crashed")
+            fails=$(grep -c '^FAIL' logs/$br-$vp.log || true)
+            if [ $rc -eq 0 ]; then icon="✅"; else icon="❌"; status=1; fi
+            echo "| $br | $vp | $icon | $tot | $fails |" >> results.md
+            grep '^FAIL' logs/$br-$vp.log | head -20 | sed "s/^/    $br $vp: /" >> failures.txt || true
+          done; done
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          { echo "| Browser | Viewport | Result | Passed | Failed |"; echo "|---|---|---|---|---|"; cat results.md; } > table.md
+          cat table.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload screenshots and logs
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ steps.stamp.outputs.short }}
+          path: |
+            shots/*.png
+            logs/*.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Post or update PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          SHORT: ${{ steps.stamp.outputs.short }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- pr-check:browser-tests -->';
+            const table = fs.existsSync('table.md') ? fs.readFileSync('table.md', 'utf8') : '_Tests did not run; see the job log._';
+            const fails = fs.existsSync('failures.txt') ? fs.readFileSync('failures.txt', 'utf8').trim() : '';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [marker, `### Browser tests for \`${process.env.SHORT}\``, '', table, '',
+              fails ? '<details><summary>Failures</summary>\n\n```\n' + fails + '\n```\n</details>\n' : '',
+              `Screenshots (zh-1280, zh-390, en-1280, en-390, try-zh-390, try-en-390, plus error/hint shots) and logs: ${process.env.ARTIFACT_URL ? `[artifact](${process.env.ARTIFACT_URL})` : 'not uploaded'} · [run](${run})`].join('\n');
+            const { owner, repo } = context.repo; const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const mine = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+      - name: Fail if any browser run failed
+        if: steps.run.outputs.status != '0'
+        run: exit 1
