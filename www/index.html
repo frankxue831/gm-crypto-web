@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>国密在线工具 · SM2 / SM3 / SM4 Online Tool</title>
 <meta name="description" content="国密在线工具：在浏览器本地计算 SM2/SM3/SM4，对照国标向量，不上传数据。SM2/SM3/SM4 in your browser — runs locally, nothing uploaded. Unaudited; do not use production keys.">
-<link rel="canonical" href="https://www.frankxue.dev/gm-crypto-web/">
+<link rel="alternate" hreflang="zh-CN" href="https://www.frankxue.dev/gm-crypto-web/?lang=zh">
+<link rel="alternate" hreflang="en" href="https://www.frankxue.dev/gm-crypto-web/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://www.frankxue.dev/gm-crypto-web/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.frankxue.dev/gm-crypto-web/">
 <meta property="og:title" content="国密在线工具 · SM2 / SM3 / SM4 Online Tool">
@@ -66,6 +68,7 @@ label.f{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;fo
 .meta.bad{background:#fde8e7;color:var(--err)}
 textarea,input[type=text],select{width:100%;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;min-height:42px}
 textarea.badf,input.badf{border-color:var(--err);background:#fff6f5;box-shadow:0 0 0 1px var(--err)}
+textarea::placeholder,input::placeholder{color:#8b949e;font-style:italic}
 input:disabled{background:#eceff2;color:#8b949e}
 textarea{min-height:64px;resize:vertical;word-break:break-all}
 select{width:auto;font-family:inherit}
@@ -81,7 +84,10 @@ button:active{transform:translateY(1px)}
 .err{color:var(--err);font-size:.9rem;min-height:1.2em;margin:6px 0 0}
 .ok{color:var(--ok)}.bad{color:var(--err)}
 .hint{font-size:.85rem;color:var(--muted);margin:4px 0 0}
-.badge{display:inline-block;margin-top:6px;font-size:.9rem;font-weight:600}
+.badge{display:block;margin-top:6px;font-size:.9rem;font-weight:600;min-height:1.4em}
+.out.flash>textarea{animation:okflash 1.5s ease-out}
+@keyframes okflash{0%{box-shadow:0 0 0 3px rgba(26,127,55,.45);background:rgba(26,127,55,.10)}100%{box-shadow:0 0 0 3px rgba(26,127,55,0);background:#fafbfc}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.out.flash>textarea{animation:none;box-shadow:0 0 0 3px rgba(26,127,55,.35)}}
 #testsum{font-weight:700;margin:8px 0 0}
 #results{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,monospace;background:#f4f4f4;padding:8px;border-radius:6px;margin-top:8px}
 footer{font-size:.85rem;color:var(--muted);padding:14px 16px 28px}
@@ -126,7 +132,9 @@ footer a{color:var(--red)}
 <div class="btns"><button class="p" id="sm4enc" data-i18n="sm4.enc"></button><button id="sm4dec" data-i18n="sm4.dec"></button></div>
 <label class="f" for="sm4out"><span data-i18n="sm4.out"></span><span class="meta" id="m-sm4out"></span></label><div class="out"><textarea id="sm4out" readonly></textarea><button class="copy" data-copy="sm4out" data-i18n="copy" data-i18n-aria="copy.aria"></button></div>
 <span class="badge" id="sm4match" aria-live="polite"></span>
+<p class="hint" id="sm4note" aria-live="polite"></p>
 <p class="hint" data-i18n="sm4.exNote"></p>
+<p class="hint" id="sm4check" data-i18n="sm4.checkHint"></p>
 <p class="err" id="err-sm4" aria-live="polite"></p></section>
 </div>
 

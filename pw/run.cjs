@@ -14,6 +14,9 @@ const report0=[];
  report0.push({n:'static meta description',ok:m(/<meta name="description" content="[^"]{20,}"/)},{n:'static og:title/description/url/type',ok:m(/property="og:title" content="[^"]+"/)&&m(/property="og:description" content="[^"]+"/)&&m(/property="og:url" content="https:\/\/www\.frankxue\.dev\/gm-crypto-web\/"/)&&m(/property="og:type" content="website"/)},
   {n:'static og:image absolute URL',ok:ogimg==='https://www.frankxue.dev/gm-crypto-web/og.png',i:ogimg},
   {n:'static twitter card/title/description/image',ok:m(/name="twitter:card" content="summary_large_image"/)&&m(/name="twitter:title" content="[^"]+"/)&&m(/name="twitter:description" content="[^"]+"/)&&m(/name="twitter:image" content="https:\/\/www\.frankxue\.dev\/gm-crypto-web\/og\.png"/)});
+ const alt=[...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">/g)].map(x=>x[1]+'='+x[2]).join(' ');
+ report0.push({n:'static hreflang zh-CN/en/x-default',ok:alt==='zh-CN=https://www.frankxue.dev/gm-crypto-web/?lang=zh en=https://www.frankxue.dev/gm-crypto-web/?lang=en x-default=https://www.frankxue.dev/gm-crypto-web/',i:alt},
+  {n:'static HTML has no canonical (JS sets it per language)',ok:!/rel="?canonical/i.test(html)});
  const r=await fetch(new URL('og.png',base));const buf=Buffer.from(await r.arrayBuffer());const png=buf.slice(1,4).toString()==='PNG';
  report0.push({n:'og.png reachable, PNG 1200x630',ok:r.ok&&png&&buf.readUInt32BE(16)===1200&&buf.readUInt32BE(20)===630,i:r.status+' '+(png?buf.readUInt32BE(16)+'x'+buf.readUInt32BE(20):'not png')})}
 const newPage=async(locale)=>{const o={viewport:mobile?{width:390,height:844}:{width:1440,height:1000},locale};if(mobile&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}
@@ -37,8 +40,8 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  chk('try: SM4 vector computed',(await p.inputValue('#sm4out'))==='681edf34d206965e86b3e94f536e4246');
  chk('try: SM4 match badge',(await tx('#sm4match')).includes(S.match),await tx('#sm4match'));
  chk('try: SM2 signed+verified',(await tx('#sm2vres')).includes(S.ok),await tx('#sm2vres'));
- await p.waitForTimeout(600);const top=await p.evaluate(()=>document.getElementById('s-sm3').getBoundingClientRect().top);chk('try: scrolled to SM3',top>-5&&top<140,top);
- chk('try: focus on SM3 heading',(await p.evaluate(()=>document.activeElement&&document.activeElement.id))==='h-sm3');
+ await p.waitForTimeout(1200);const top=await p.evaluate(()=>document.querySelector('label[for=sm4out]').getBoundingClientRect().top);const nb=await p.evaluate(()=>document.querySelector('nav.nav').getBoundingClientRect().bottom);chk('try: scrolled to SM4 output (below nav, in view)',top>=nb-1&&top<500,top+' nav '+nb);
+ chk('try: focus on SM4 output',(await p.evaluate(()=>document.activeElement&&document.activeElement.id))==='sm4out');
  // labels: type + byte length
  chk('label sm4key Hex·16',(await tx('#m-sm4key')).startsWith('Hex')&&(await tx('#m-sm4key')).includes('16'),await tx('#m-sm4key'));
  chk('label sm3out Hex·32',(await tx('#m-sm3out')).includes('32'),await tx('#m-sm3out'));
@@ -164,5 +167,116 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
   const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,col:getComputedStyle(e).color}});
   chk(`wasm blocked ${lg}: badge not green`,bd.c!=='ok'&&!bd.t.startsWith('✓')&&bd.col!=='rgb(26, 127, 55)'&&bd.t!=='',JSON.stringify(bd));await ctx.close()}
  report('howto+badge',X)}
+// ---- round 3: size limit, scroll-to-result, SM4 hint + friendly decrypt errors, canonical
+{const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,160)});
+ const R3={zh:{big1:'输入超过 1 MB，本工具不支持这么大的输入',big256:'输入超过 256 KB，本工具不支持这么大的输入',match:'与国标向量一致',hint:['要核对密文','明文也按二进制编码解析','模式','填充','IV','解密','ECB 无填充时无法发现密文错误'],pad:'填充校验不通过',noPad:'无填充解密不做任何校验'},
+  en:{big1:'Input exceeds 1 MB; this tool does not support inputs that large',big256:'Input exceeds 256 KB; this tool does not support inputs that large',match:'Matches the official test vector',hint:['To check a ciphertext','Parse plaintext with the binary encoding too','Mode','Padding','IV','Decrypt','ECB with no padding cannot detect a wrong ciphertext'],pad:'padding check did not pass',noPad:'decryption without padding performs no check'}};
+ const mk=async(vp,locale,extra={})=>{const o={viewport:vp,locale,...extra};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
+  p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
+ const vis=p=>p.evaluate(()=>{const nav=document.querySelector('nav.nav').getBoundingClientRect().bottom,o=document.getElementById('sm4out').getBoundingClientRect(),m=document.getElementById('sm4match').getBoundingClientRect();
+  const full=r=>r.height>0&&r.top>=nav-0.5&&r.bottom<=innerHeight+0.5;return {nav:Math.round(nav),out:[Math.round(o.top),Math.round(o.bottom)],m:[Math.round(m.top),Math.round(m.bottom)],vh:innerHeight,ok:full(o)&&full(m),under:m.top-o.bottom}});
+ for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`,S=R3[lg];
+  const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  await p.click('#try');const fl=await p.evaluate(()=>document.getElementById('sm4out').closest('.out').classList.contains('flash'));await p.waitForTimeout(1300);const v=await vis(p);
+  chk(`try ${tag}: SM4 output + ✓ line fully visible below sticky nav`,v.ok&&(await p.textContent('#sm4match')).includes(S.match),JSON.stringify(v));
+  chk(`try ${tag}: ✓ line directly under output`,v.under>=0&&v.under<40,v.under);
+  const hl=await p.evaluate(()=>{const e=document.getElementById('sm4out'),c=getComputedStyle(e);return {an:c.animationName,dur:c.animationDuration}});
+  chk(`try ${tag}: output flashes green (~1.5s)`,fl&&hl.an==='okflash'&&hl.dur==='1.5s',JSON.stringify(hl));
+  await p.waitForTimeout(700);chk(`try ${tag}: flash removed afterwards`,!(await p.evaluate(()=>document.getElementById('sm4out').closest('.out').classList.contains('flash'))));
+  if(process.env.SHOTDIR){await p.click('#try');await p.waitForTimeout(400);await p.screenshot({path:`${process.env.SHOTDIR}/try-${lg}-${vp.width}.png`})}
+  await ctx.close()}
+ // reduced motion: instant jump, no animation
+ for(const lg of ['zh','en']){const [ctx,p]=await mk({width:1280,height:800},lg==='zh'?'zh-CN':'en-US',{reducedMotion:'reduce'});await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  const r=await p.evaluate(()=>{document.getElementById('try').click();const t=document.querySelector('label[for=sm4out]').getBoundingClientRect().top;return {t,y:scrollY,an:getComputedStyle(document.getElementById('sm4out')).animationName}});
+  await p.waitForTimeout(800);const y2=await p.evaluate(()=>scrollY);const v=await vis(p);
+  chk(`reduced motion ${lg}: instant jump (final position on the same frame), no animation, result visible`,r.y>0&&r.y===y2&&r.an==='none'&&v.ok,JSON.stringify({...r,y2,v:v.ok}));await ctx.close()}
+ // size limit + hint + friendly errors + canonical, desktop and mobile per language
+ for(const lg of ['zh','en']){const S=R3[lg];const [ctx,p]=await mk(mobile?{width:390,height:844}:{width:1280,height:800},lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  const hint=await p.textContent('#sm4check');chk(`hint ${lg}: present with real labels`,S.hint.every(s=>hint.includes(s)),hint);
+  const can=await p.getAttribute('link[rel=canonical]','href');chk(`canonical ${lg}: follows language`,can==='https://www.frankxue.dev/gm-crypto-web/?lang='+lg,can);
+  const other=lg==='zh'?'en':'zh';await p.click('#lang-'+other);const can2=await p.getAttribute('link[rel=canonical]','href');await p.click('#lang-'+lg);
+  chk(`canonical ${lg}: switches to ?lang=${other}`,can2==='https://www.frankxue.dev/gm-crypto-web/?lang='+other,can2);
+  if(name==='chromium')await p.evaluate(()=>{window.__lt=[];new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push({s:e.startTime,d:e.duration}))).observe({type:'longtask',buffered:false})});
+  // 10 MB paste: every action shows the message within 1 s and the page stays responsive
+  const frame=()=>p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0))));
+  const big=async(setup,btn,sec,exp,label)=>{
+   // (a) a real Ctrl/Cmd+V of 10 MB (clipboard filled via a trusted copy event): refused up front, field untouched, message shown
+   const fid=setup.find(([,k])=>k==='txt'||k==='hex');
+   await p.evaluate(([setup,fid])=>{const $=id=>document.getElementById(id);for(const [id,k] of setup){if(k==='ex')$(id).click();else if(k==='chk')$(id).checked=true}
+    for(const s of ['sm3','sm4','sm2'])$('err-'+s).textContent='';window.__before=$(fid[0]).value;const big=fid[1]==='hex'?'00'.repeat(10485760):'a'.repeat(10485760);
+    document.addEventListener('copy',e=>{e.clipboardData.setData('text/plain',big);e.preventDefault()},{once:true})},[setup,fid]);
+   await p.focus('#'+fid[0]);await p.keyboard.press('ControlOrMeta+C');await p.evaluate(id=>{const e=document.getElementById(id);e.select();window.__tp=performance.now()},fid[0]);
+   const tp=Date.now();await p.keyboard.press('ControlOrMeta+V');await frame();const pms=Date.now()-tp;
+   const pz=await p.evaluate(([id,sec])=>({same:document.getElementById(id).value===window.__before,e:document.getElementById('err-'+sec).textContent}),[fid[0],sec]);
+   chk(`10MB paste ${lg} ${label}: refused within 1s, field unchanged`,pms<1000&&pz.same&&pz.e.includes(exp),pms+'ms '+pz.e);
+   if(process.env.SHOTDIR&&!mobile&&label==='SM4 encrypt hex')await (await p.$('#s-sm4')).screenshot({path:`${process.env.SHOTDIR}/limit-${lg}-sm4.png`});
+   // (b) 10 MB already in the field (e.g. typed/dropped): clicking the action shows the message within 1s and the next frame comes quickly
+   await p.evaluate(([setup])=>{const $=id=>document.getElementById(id);for(const [id,k] of setup){if(k==='ex'||k==='chk')continue;$(id).value=k==='hex'?'00'.repeat(10485760):'a'.repeat(10485760);$(id).dispatchEvent(new Event('input',{bubbles:true}))}},[setup]);
+   for(let i=0;i<40;i++){const t=Date.now();await frame();if(Date.now()-t<50)break;await p.waitForTimeout(250)} // let the browser finish laying out the 10 MB textarea first
+   const t0=Date.now();const r=await p.evaluate(([btn,sec])=>{const $=id=>document.getElementById(id);window.__t0=performance.now();const t=performance.now();$(btn).click();return {ms:performance.now()-t,e:$('err-'+sec).textContent}},[btn,sec]);
+   await frame();const resp=Date.now()-t0;
+   chk(`10MB ${lg} ${label}: click shows message within 1s, page responsive`,r.ms<1000&&resp<1000&&r.e.includes(exp),Math.round(r.ms)+'ms, next frame '+resp+'ms '+r.e);
+   if(name==='chromium'){const lt=await p.evaluate(()=>window.__lt.filter(e=>e.s>=window.__t0).map(e=>e.d));chk(`10MB ${lg} ${label}: no long task after click`,lt.every(d=>d<200),'max '+Math.round(Math.max(0,...lt))+'ms')}
+   await p.evaluate(()=>{for(const id of ['sm3in','sm4in','sm2msg','sm2ct'])document.getElementById(id).value=''});await frame()};
+  await big([['sm3in','txt']],'sm3go','sm3',S.big1,'SM3 hash');
+  await big([['ex-sm4','ex'],['sm4in','txt']],'sm4enc','sm4',S.big256,'SM4 encrypt text');
+  await big([['ex-sm4','ex'],['sm4inbin','chk'],['sm4in','hex']],'sm4enc','sm4',S.big256,'SM4 encrypt hex');
+  await big([['ex-sm4','ex'],['sm4in','hex']],'sm4dec','sm4',S.big256,'SM4 decrypt');
+  await big([['ex-sm2','ex'],['sm2msg','txt']],'sm2sign','sm2',S.big1,'SM2 sign');
+  await big([['ex-sm2','ex'],['sm2msg','txt']],'sm2verify','sm2',S.big1,'SM2 verify');
+  await big([['ex-sm2','ex'],['sm2msg','txt']],'sm2enc','sm2',S.big1,'SM2 encrypt');
+  await big([['ex-sm2','ex'],['sm2ct','hex']],'sm2dec','sm2',S.big1,'SM2 decrypt');
+  // just under / just over the limit
+  const edge=async(js,sec,label,expOk,exp)=>{const r=await p.evaluate(([js,sec])=>{const $=id=>document.getElementById(id);(new Function('$',js))($);return $('err-'+sec).textContent},[js,sec]);
+   chk(`limit edge ${lg}: ${label}`,expOk?r==='':r.includes(exp),r||'(no error)')};
+  const M=1048576,K=262144;
+  await edge(`$('sm3in').value='a'.repeat(${M});$('sm3go').click()`,'sm3','SM3 1 MB exactly runs',true);
+  await edge(`$('sm3in').value='a'.repeat(${M+1});$('sm3go').click()`,'sm3','SM3 1 MB + 1 byte refused',false,S.big1);
+  await edge(`$('sm3in').value='é'.repeat(${M/2+1});$('sm3go').click()`,'sm3','SM3 counts UTF-8 bytes',false,S.big1);
+  await edge(`$('ex-sm4').click();$('sm4pad').value='pkcs7';$('sm4in').value='00'.repeat(${K});$('sm4enc').click()`,'sm4','SM4 256 KB exactly runs',true);
+  await edge(`$('sm4in').value=$('sm4out').value;$('sm4dec').click()`,'sm4','SM4 decrypt of 256 KB + padding block runs',true);
+  await edge(`$('ex-sm4').click();$('sm4pad').value='pkcs7';$('sm4in').value='00'.repeat(${K+1});$('sm4enc').click()`,'sm4','SM4 256 KB + 1 byte refused',false,S.big256);
+  await edge(`$('ex-sm2').click();$('sm2msg').value='a'.repeat(${M});$('sm2sign').click();$('sm2verify').click();$('sm2enc').click();$('sm2dec').click()`,'sm2','SM2 1 MB sign/verify/enc/dec runs',true);
+  await edge(`$('sm2msg').value='a'.repeat(${M+1});$('sm2sign').click()`,'sm2','SM2 1 MB + 1 byte refused',false,S.big1);
+  await p.evaluate(()=>{for(const id of ['sm3in','sm4in','sm4out','sm2msg','sm2ct'])document.getElementById(id).value=''});
+  // one-byte-off ciphertext
+  const flip=(h,i)=>{const j=i<0?h.length/2+i:i;return h.slice(0,2*j)+((parseInt(h.substr(2*j,2),16)^1).toString(16).padStart(2,'0'))+h.slice(2*j+2)};
+  for(const [mode,pad,pos] of [['ECB','pkcs7',-1],['CBC','pkcs7',-1],['CBC','pkcs7',15]]){await p.click('#ex-sm4');await p.selectOption('#sm4mode',mode);await p.selectOption('#sm4pad',pad);await p.uncheck('#sm4inbin');
+   await p.fill('#sm4in','hello world, this is 2 blocks!!');await p.click('#sm4enc');const ct=await p.inputValue('#sm4out');await p.fill('#sm4in',flip(ct,pos));await p.click('#sm4dec');const e=await p.textContent('#err-sm4');
+   chk(`one-byte-off ${lg} ${mode}/${pad} byte ${pos}: friendly padding error`,e.includes(S.pad)&&(await p.inputValue('#sm4out'))===''&&!/Unexpected|未知错误|bad padding|decrypt failed/.test(e),e)}
+  await p.click('#ex-sm4');await p.click('#sm4enc');await p.fill('#sm4in',flip(await p.inputValue('#sm4out'),3));await p.click('#sm4dec');
+  chk(`one-byte-off ${lg} ECB/none: no error, but no-check note shown`,(await p.textContent('#err-sm4'))===''&&(await p.textContent('#sm4note')).includes(S.noPad),await p.textContent('#sm4note'));
+  await p.click('#sm4enc');chk(`note cleared on next encrypt ${lg}`,(await p.textContent('#sm4note'))==='');
+  if(process.env.SHOTDIR&&!mobile){await p.click('#ex-sm4');await p.selectOption('#sm4pad','pkcs7');await p.uncheck('#sm4inbin');await p.fill('#sm4in','hello world, this is 2 blocks!!');await p.click('#sm4enc');await p.fill('#sm4in',flip(await p.inputValue('#sm4out'),-1));await p.click('#sm4dec');
+   await p.evaluate(()=>{document.getElementById('s-sm4').scrollIntoView();scrollBy(0,-60)});await p.screenshot({path:`${process.env.SHOTDIR}/hint-${lg}-1280.png`});
+   await (await p.$('#s-sm4')).screenshot({path:`${process.env.SHOTDIR}/sm4-section-${lg}.png`})}
+  const miss=await p.evaluate(()=>{const h=document.documentElement.outerHTML+document.body.innerText;return (h.match(/⟦[^⟧]*⟧/g)||[]).slice(0,5)});chk(`no missing i18n keys after round-3 flows ${lg}`,miss.length===0,miss.join(','));
+  await ctx.close()}
+ // error placement: oversized / bad input clears the output, red-borders the input, error right under it
+ const NR={zh:'无结果',en:'No result'};
+ for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`,S=R3[lg];
+  const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  await p.click('#ex-sm4');await p.click('#sm4enc');const ok1=(await p.inputValue('#sm4out'))==='681edf34d206965e86b3e94f536e4246';
+  await p.evaluate(()=>{const e=document.getElementById('sm4in');e.value='00'.repeat(300*1024);e.dispatchEvent(new Event('input',{bubbles:true}))});await p.click('#sm4enc');
+  await p.evaluate(()=>document.getElementById('sm4in').scrollIntoView({block:'center'}));await p.waitForTimeout(300);
+  const g=await p.evaluate(()=>{const i=document.getElementById('sm4in'),e=document.getElementById('err-sm4'),o=document.getElementById('sm4out');const ri=i.getBoundingClientRect(),re=e.getBoundingClientRect();
+   const nav=document.querySelector('nav.nav').getBoundingClientRect().bottom,inV=r=>r.top>=nav-1&&r.bottom<=innerHeight+1&&r.height>0;
+   return {out:o.value,ph:o.placeholder,bad:i.classList.contains('badf'),err:e.textContent,gap:Math.round(re.top-ri.bottom),next:i.nextElementSibling===e,inView:inV(ri)&&inV(re)}});
+  chk(`err ${tag}: oversized SM4 input clears old ciphertext, shows "${NR[lg]}"`,ok1&&g.out===''&&g.ph===NR[lg],JSON.stringify(g).slice(0,160));
+  chk(`err ${tag}: input red-bordered, error directly under it, both on screen`,g.bad&&g.next&&g.gap>=0&&g.gap<30&&g.inView&&g.err.includes(S.big256),JSON.stringify({...g,err:g.err.slice(0,30)}));
+  if(process.env.SHOTDIR)await p.screenshot({path:`${process.env.SHOTDIR}/err-${lg}-${vp.width}.png`});
+  await p.type('#sm4in','0');const c=await p.evaluate(()=>({err:document.getElementById('err-sm4').textContent,bad:document.getElementById('sm4in').classList.contains('badf')}));
+  chk(`err ${tag}: editing the input clears error + border`,c.err===''&&!c.bad,JSON.stringify(c));
+  await p.click('#ex-sm4');await p.click('#sm4enc');chk(`err ${tag}: next success clears placeholder`,(await p.inputValue('#sm4out'))!==''&&(await p.getAttribute('#sm4out','placeholder'))===null);
+  // conversion error lands under the key; decrypt failure under the ciphertext
+  await p.fill('#sm4key','zz');await p.click('#sm4enc');const k=await p.evaluate(()=>{const i=document.getElementById('sm4key'),e=document.getElementById('err-sm4');return {next:i.nextElementSibling===e,bad:i.classList.contains('badf'),out:document.getElementById('sm4out').value}});
+  chk(`err ${tag}: bad hex key → error under key, output cleared`,k.next&&k.bad&&k.out==='',JSON.stringify(k));
+  await p.click('#ex-sm4');await p.selectOption('#sm4pad','pkcs7');await p.click('#sm4enc');const ct=await p.inputValue('#sm4out');await p.fill('#sm4in',ct.slice(0,-2)+(ct.endsWith('00')?'01':'00'));await p.click('#sm4dec');
+  const d=await p.evaluate(()=>{const i=document.getElementById('sm4in'),e=document.getElementById('err-sm4');return {next:i.nextElementSibling===e,bad:i.classList.contains('badf'),out:document.getElementById('sm4out').value,e:e.textContent}});
+  chk(`err ${tag}: padding failure → error under ciphertext, output cleared`,d.next&&d.bad&&d.out===''&&d.e.includes(S.pad),JSON.stringify(d).slice(0,160));
+  await p.click('#sm3go');await p.click('#ex-sm3');await p.click('#sm3go');
+  chk(`err ${tag}: section-level error slot returns to section end`,await p.evaluate(()=>{const e=document.getElementById('err-sm4');return e.parentElement.id==='s-sm4'}));
+  await ctx.close()}
+ report('round3',X)}
 report('static',report0);console.log('TOTAL',passed+'/'+total);console.log('errors',JSON.stringify(allErrs));console.log('external',JSON.stringify([...new Set(allExt)]));
 await b.close();process.exit(allOk&&!allErrs.length&&!allExt.length?0:1)})();
