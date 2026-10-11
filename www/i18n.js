@@ -116,6 +116,7 @@ export function apply(l,save){cur=l;if(save){try{localStorage.setItem('gmweb.lan
  // canonical is JS-only (static hosting cannot vary it by ?lang=): create it if missing, follow the language
  let c=document.querySelector('link[rel=canonical]');if(!c){c=document.createElement('link');c.rel='canonical';document.head.appendChild(c)}c.href=CANON+'?lang='+l;
  document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
+ {const h=document.querySelector('h1[data-i18n]'),A='SM2 / SM3 / SM4';if(h){const x=h.textContent,i=x.indexOf(A);if(i>=0){const n=document.createElement('span');n.className='nw';n.textContent=A;h.replaceChildren(x.slice(0,i),n,x.slice(i+A.length))}}}
  document.querySelectorAll('[data-i18n-aria]').forEach(e=>e.setAttribute('aria-label',t(e.dataset.i18nAria)));
  document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.setAttribute('placeholder',t(e.dataset.i18nPh)));
  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)))}
