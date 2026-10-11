@@ -34,7 +34,7 @@ Out of scope (intentionally): accounts / backend / storage, X.509, GCM/CCM/XTS.
 - Randomness: `getrandom` 0.4 (`wasm_js`, i.e. the browser's `crypto.getRandomValues`).
 - Verified: SM3 `"abc"` and the SM4 standard test vector; SM2 signing matches the **official GB/T 32918.2 Appendix A.2 vector** (fixed k, native Rust test).
 - **SM2 encryption is only cross-checked against an independent reference implementation (`ref_sm2enc.py`, Python), not an official test vector.**
-- Built-in self-test (11 checks); tested with Playwright in Chromium / Firefox / WebKit, desktop and mobile, in both languages.
+- Built-in self-test (11 checks: SM3/SM4 against the GB/T vectors, SM2 by round trip); tested with Playwright in Chromium / Firefox / WebKit, desktop and mobile, in both languages.
 
 ### Build and run locally
 
@@ -87,7 +87,7 @@ Same as gm-crypto-rs: dual-licensed under MIT or Apache-2.0, at your option (see
 - 随机数：`getrandom` 0.4（`wasm_js`，即浏览器 `crypto.getRandomValues`）。
 - 已验证：SM3 `"abc"` 和 SM4 标准测试向量；SM2 签名通过 **GB/T 32918.2 附录 A.2 官方向量**（固定 k，原生 Rust 测试）。
 - **SM2 加密仅与独立参考实现（`ref_sm2enc.py`，Python）交叉验证，未对照官方测试向量。**
-- 页面内置自检（11 项），并用 Playwright 在 Chromium / Firefox / WebKit 的桌面与移动视口、中英两种语言下测试。
+- 页面内置自检（11 项：SM3、SM4 对国标向量，SM2 做往返校验），并用 Playwright 在 Chromium / Firefox / WebKit 的桌面与移动视口、中英两种语言下测试。
 
 ### 本地构建与运行
 

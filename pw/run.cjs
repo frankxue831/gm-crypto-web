@@ -4,8 +4,8 @@ const pw=require('playwright-core');const name=process.argv[2]||'chromium';
 const base=process.env.BASE_URL||'http://127.0.0.1:8765/';const mobile=!!process.env.MOBILE;
 const withQ=(q)=>{const u=new URL(base);for(const[k,v]of Object.entries(q))u.searchParams.set(k,v);return u.toString()};
 const L={
- zh:{prompt:'点击运行，用国标向量校验本页实现。',tagline:'在浏览器里调试',match:'与国标向量一致',text:'文本',ivEcb:'ECB 不使用 IV',convFail:'无法转换',compressed:'不支持 02/03 开头的压缩公钥',summary:'11/11 通过',copied:'已复制',ok:'通过',htmlLang:'zh-CN',title:/国密在线小工具/,v:['非法 Hex','奇数','SM4 密钥必须为 16 字节','16 字节的整数倍','密文长度必须是 16','IV必须为 16 字节','私钥必须为 32 字节','04 开头','公钥必须为 65 字节','不是合法的 Base64'],prefix:'错误：'},
- en:{prompt:'Click Run to check this page against the official GB/T test vectors.',tagline:'Debug SM2/SM3/SM4',match:'Matches the official test vector',text:'Text',ivEcb:'ECB does not use an IV',convFail:'Could not convert',compressed:'compressed 02/03 keys are not',summary:'11/11 passed',copied:'Copied',ok:'valid',htmlLang:'en',title:/SM2 \/ SM3 \/ SM4 Online Tool/,v:['invalid hex','odd number','SM4 key must be 16 bytes','multiple of 16 bytes','Ciphertext length must be','IV must be 16 bytes','private key must be 32 bytes','start with 04','public key must be 65 bytes','not valid Base64'],prefix:'Error: '}};
+ zh:{prompt:'点击运行，校验本页实现：SM3、SM4 对国标向量，SM2 做往返校验。',tagline:'在浏览器里调试',match:'与国标向量一致',text:'文本',ivEcb:'ECB 不使用 IV',convFail:'无法转换',compressed:'不支持 02/03 开头的压缩公钥',summary:'11/11 通过（SM3、SM4 对国标向量，SM2 做往返校验）',copied:'已复制',ok:'通过',htmlLang:'zh-CN',title:/国密在线小工具/,v:['非法 Hex','奇数','SM4 密钥必须为 16 字节','16 字节的整数倍','密文长度必须是 16','IV必须为 16 字节','私钥必须为 32 字节','04 开头','公钥必须为 65 字节','不是合法的 Base64'],prefix:'错误：'},
+ en:{prompt:'Click Run to check this page: SM3/SM4 against the GB/T vectors, SM2 by round trip.',tagline:'Debug SM2/SM3/SM4',match:'Matches the official test vector',text:'Text',ivEcb:'ECB does not use an IV',convFail:'Could not convert',compressed:'compressed 02/03 keys are not',summary:'11/11 passed (SM3/SM4 against the GB/T vectors, SM2 by round trip)',copied:'Copied',ok:'valid',htmlLang:'en',title:/SM2 \/ SM3 \/ SM4 Online Tool/,v:['invalid hex','odd number','SM4 key must be 16 bytes','multiple of 16 bytes','Ciphertext length must be','IV must be 16 bytes','private key must be 32 bytes','start with 04','public key must be 65 bytes','not valid Base64'],prefix:'Error: '}};
 (async()=>{const b=await pw[name].launch(name==='chromium'&&process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH,args:['--no-sandbox']}:{});
 const allErrs=[],allExt=[];let total=0,passed=0,allOk=true;
 const report0=[];
@@ -132,7 +132,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  await ctx.close();report('i18n',X)}
 // ---- how-to row + live self-test badge
 {const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,120)});
- const BADGE={zh:{ok:'✓ 国标向量自检 11/11',run:'自检中…'},en:{ok:'✓ Self-test 11/11 vs GB/T vectors',run:'Checking…'}};
+ const BADGE={zh:{ok:'✓ 自检 11/11',run:'自检中…'},en:{ok:'✓ Self-test 11/11',run:'Checking…'}};
  const HOW={zh:['选算法','点「试一下示例」','对照国标结果'],en:['Pick an algorithm','Click "Try an example"','Compare with the standard result']};
  const mk=async(vp,locale)=>{const o={viewport:vp,locale};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
   p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
