@@ -88,7 +88,7 @@ function render(){for(const s in errs){const el=$('err-'+s),x=errs[s];el.textCon
   $('results').textContent=lastResults.map(x=>`${t(x.pass?'pass':'fail')}  ${t(x.k)}${x.info?'  '+x.info:''}`).join('\n')}
  else{$('testsum').textContent='';$('results').textContent=t('test.prompt')}
  const sb=$('stbadge'),okN=autoResults?autoResults.filter(x=>x.pass).length:0;
- sb.className=stState==='run'?'':stState;sb.setAttribute('aria-label',t('badge.aria'));
+ sb.className=stState==='run'?'':stState;sb.setAttribute('aria-label',t('badge.aria'));sb.setAttribute('title',t('badge.title'));
  sb.textContent=stState==='run'?t('badge.run'):t(stState==='ok'?'badge.ok':'badge.bad',{ok:okN,n:CASES.length});
  metaAll()}
 function setLang(l,save){apply(l,save);render()}
