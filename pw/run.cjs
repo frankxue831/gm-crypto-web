@@ -16,7 +16,7 @@ const report0=[];
   {n:'static twitter card/title/description/image',ok:m(/name="twitter:card" content="summary_large_image"/)&&m(/name="twitter:title" content="[^"]+"/)&&m(/name="twitter:description" content="[^"]+"/)&&m(/name="twitter:image" content="https:\/\/www\.frankxue\.dev\/gm-crypto-web\/og\.png"/)});
  const alt=[...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">/g)].map(x=>x[1]+'='+x[2]).join(' ');
  report0.push({n:'static hreflang zh-CN/en/x-default',ok:alt==='zh-CN=https://www.frankxue.dev/gm-crypto-web/?lang=zh en=https://www.frankxue.dev/gm-crypto-web/?lang=en x-default=https://www.frankxue.dev/gm-crypto-web/',i:alt},
-  {n:'static canonical = bare URL (x-default)',ok:m(/<link rel="canonical" href="https:\/\/www\.frankxue\.dev\/gm-crypto-web\/">/)});
+  {n:'static HTML has no canonical (JS sets it per language)',ok:!/rel="?canonical/i.test(html)});
  const r=await fetch(new URL('og.png',base));const buf=Buffer.from(await r.arrayBuffer());const png=buf.slice(1,4).toString()==='PNG';
  report0.push({n:'og.png reachable, PNG 1200x630',ok:r.ok&&png&&buf.readUInt32BE(16)===1200&&buf.readUInt32BE(20)===630,i:r.status+' '+(png?buf.readUInt32BE(16)+'x'+buf.readUInt32BE(20):'not png')})}
 const newPage=async(locale)=>{const o={viewport:mobile?{width:390,height:844}:{width:1440,height:1000},locale};if(mobile&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}
@@ -251,6 +251,31 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
    await p.evaluate(()=>{document.getElementById('s-sm4').scrollIntoView();scrollBy(0,-60)});await p.screenshot({path:`${process.env.SHOTDIR}/hint-${lg}-1280.png`});
    await (await p.$('#s-sm4')).screenshot({path:`${process.env.SHOTDIR}/sm4-section-${lg}.png`})}
   const miss=await p.evaluate(()=>{const h=document.documentElement.outerHTML+document.body.innerText;return (h.match(/⟦[^⟧]*⟧/g)||[]).slice(0,5)});chk(`no missing i18n keys after round-3 flows ${lg}`,miss.length===0,miss.join(','));
+  await ctx.close()}
+ // error placement: oversized / bad input clears the output, red-borders the input, error right under it
+ const NR={zh:'无结果',en:'No result'};
+ for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`,S=R3[lg];
+  const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
+  await p.click('#ex-sm4');await p.click('#sm4enc');const ok1=(await p.inputValue('#sm4out'))==='681edf34d206965e86b3e94f536e4246';
+  await p.evaluate(()=>{const e=document.getElementById('sm4in');e.value='00'.repeat(300*1024);e.dispatchEvent(new Event('input',{bubbles:true}))});await p.click('#sm4enc');
+  await p.evaluate(()=>document.getElementById('sm4in').scrollIntoView({block:'center'}));await p.waitForTimeout(300);
+  const g=await p.evaluate(()=>{const i=document.getElementById('sm4in'),e=document.getElementById('err-sm4'),o=document.getElementById('sm4out');const ri=i.getBoundingClientRect(),re=e.getBoundingClientRect();
+   const nav=document.querySelector('nav.nav').getBoundingClientRect().bottom,inV=r=>r.top>=nav-1&&r.bottom<=innerHeight+1&&r.height>0;
+   return {out:o.value,ph:o.placeholder,bad:i.classList.contains('badf'),err:e.textContent,gap:Math.round(re.top-ri.bottom),next:i.nextElementSibling===e,inView:inV(ri)&&inV(re)}});
+  chk(`err ${tag}: oversized SM4 input clears old ciphertext, shows "${NR[lg]}"`,ok1&&g.out===''&&g.ph===NR[lg],JSON.stringify(g).slice(0,160));
+  chk(`err ${tag}: input red-bordered, error directly under it, both on screen`,g.bad&&g.next&&g.gap>=0&&g.gap<30&&g.inView&&g.err.includes(S.big256),JSON.stringify({...g,err:g.err.slice(0,30)}));
+  if(process.env.SHOTDIR)await p.screenshot({path:`${process.env.SHOTDIR}/err-${lg}-${vp.width}.png`});
+  await p.type('#sm4in','0');const c=await p.evaluate(()=>({err:document.getElementById('err-sm4').textContent,bad:document.getElementById('sm4in').classList.contains('badf')}));
+  chk(`err ${tag}: editing the input clears error + border`,c.err===''&&!c.bad,JSON.stringify(c));
+  await p.click('#ex-sm4');await p.click('#sm4enc');chk(`err ${tag}: next success clears placeholder`,(await p.inputValue('#sm4out'))!==''&&(await p.getAttribute('#sm4out','placeholder'))===null);
+  // conversion error lands under the key; decrypt failure under the ciphertext
+  await p.fill('#sm4key','zz');await p.click('#sm4enc');const k=await p.evaluate(()=>{const i=document.getElementById('sm4key'),e=document.getElementById('err-sm4');return {next:i.nextElementSibling===e,bad:i.classList.contains('badf'),out:document.getElementById('sm4out').value}});
+  chk(`err ${tag}: bad hex key → error under key, output cleared`,k.next&&k.bad&&k.out==='',JSON.stringify(k));
+  await p.click('#ex-sm4');await p.selectOption('#sm4pad','pkcs7');await p.click('#sm4enc');const ct=await p.inputValue('#sm4out');await p.fill('#sm4in',ct.slice(0,-2)+(ct.endsWith('00')?'01':'00'));await p.click('#sm4dec');
+  const d=await p.evaluate(()=>{const i=document.getElementById('sm4in'),e=document.getElementById('err-sm4');return {next:i.nextElementSibling===e,bad:i.classList.contains('badf'),out:document.getElementById('sm4out').value,e:e.textContent}});
+  chk(`err ${tag}: padding failure → error under ciphertext, output cleared`,d.next&&d.bad&&d.out===''&&d.e.includes(S.pad),JSON.stringify(d).slice(0,160));
+  await p.click('#sm3go');await p.click('#ex-sm3');await p.click('#sm3go');
+  chk(`err ${tag}: section-level error slot returns to section end`,await p.evaluate(()=>{const e=document.getElementById('err-sm4');return e.parentElement.id==='s-sm4'}));
   await ctx.close()}
  report('round3',X)}
 report('static',report0);console.log('TOTAL',passed+'/'+total);console.log('errors',JSON.stringify(allErrs));console.log('external',JSON.stringify([...new Set(allExt)]));
