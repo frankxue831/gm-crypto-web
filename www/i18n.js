@@ -39,7 +39,10 @@ zh: {...COMMON,
  'err.pub04':'SM2 公钥必须以 04 开头（未压缩格式）','err.idEmpty':'请填写自定义用户 ID',
  'err.noPadLen':p=>`无填充模式下明文长度必须是 16 字节的整数倍（当前 ${p.got} 字节）`,'err.ctLen':p=>`密文长度必须是 16 字节的整数倍且非空（当前 ${p.got} 字节）`,
  'err.invalidPriv':'私钥无效（须在 1 到 n-2 范围内）','err.invalidPub':'公钥无效（不在 SM2 曲线上）','err.sm2dec':'解密失败（密文或私钥不匹配）',
- 'err.sm4dec':'解密失败（密文长度或填充错误，或密钥/IV 不对）','err.badPad':'解密失败（PKCS#7 填充错误，密钥可能不对）',
+ 'err.sm4dec':'解密失败：填充校验不通过。密钥、IV、模式或密文可能有误（例如密文错了一个字节）。','err.badPad':'解密失败：PKCS#7 填充校验不通过。密钥、模式或密文可能有误（例如密文错了一个字节）。',
+ 'err.tooBig':p=>`输入超过 ${p.lim}，本工具不支持这么大的输入`,
+ 'sm4.checkHint':'要核对密文：把它贴进“输入”框，勾上“明文也按二进制编码解析”（点“解密”时会自动勾上），用相同的“模式”“填充”和 IV 点“解密”。ECB 无填充时无法发现密文错误，请直接比对输出是否为原明文。',
+ 'sm4.noPadDec':'注意：无填充解密不做任何校验，密文或密钥错了也会输出（乱码），请比对输出是否为原明文。',
  'err.sign':'签名失败','err.encrypt':'加密失败','err.unknown':p=>`未知错误：${p.msg}`,
  'w.input':'输入','w.sm4key':'SM4 密钥','w.pt':'明文','w.ct':'密文','w.priv':'SM2 私钥','w.pub':'SM2 公钥','w.sig':'签名','w.sm2ct':'SM2 密文',
  't.sm3':'SM3 "abc" 标准向量','t.sm4kat':'SM4 标准向量加密（无填充）','t.sm4katdec':'SM4 标准向量解密','t.sm4pkcs7':'SM4 ECB PKCS#7 往返',
@@ -83,7 +86,10 @@ en: {...COMMON,
  'err.pub04':'SM2 public key must start with 04 (uncompressed form)','err.idEmpty':'Please enter a custom user ID',
  'err.noPadLen':p=>`Without padding, plaintext length must be a multiple of 16 bytes (got ${p.got})`,'err.ctLen':p=>`Ciphertext length must be a non-zero multiple of 16 bytes (got ${p.got})`,
  'err.invalidPriv':'Invalid private key (must be in range 1 to n-2)','err.invalidPub':'Invalid public key (not on the SM2 curve)','err.sm2dec':'Decryption failed (ciphertext and private key do not match)',
- 'err.sm4dec':'Decryption failed (bad length or padding, or wrong key/IV)','err.badPad':'Decryption failed (invalid PKCS#7 padding — wrong key?)',
+ 'err.sm4dec':'Decryption failed: the padding check did not pass. The key, IV, mode or ciphertext may be wrong (e.g. one wrong byte in the ciphertext).','err.badPad':'Decryption failed: the PKCS#7 padding check did not pass. The key, mode or ciphertext may be wrong (e.g. one wrong byte in the ciphertext).',
+ 'err.tooBig':p=>`Input exceeds ${p.lim}; this tool does not support inputs that large`,
+ 'sm4.checkHint':'To check a ciphertext: paste it into "Input", tick "Parse plaintext with the binary encoding too" (Decrypt ticks it for you), and click "Decrypt" with the same Mode, Padding and IV. ECB with no padding cannot detect a wrong ciphertext, so compare the output with the original plaintext instead.',
+ 'sm4.noPadDec':'Note: decryption without padding performs no check, so a wrong ciphertext or key still produces (garbage) output. Compare it with the original plaintext.',
  'err.sign':'Signing failed','err.encrypt':'Encryption failed','err.unknown':p=>`Unexpected error: ${p.msg}`,
  'w.input':'Input','w.sm4key':'SM4 key','w.pt':'Plaintext','w.ct':'Ciphertext','w.priv':'SM2 private key','w.pub':'SM2 public key','w.sig':'Signature','w.sm2ct':'SM2 ciphertext',
  't.sm3':'SM3 "abc" test vector','t.sm4kat':'SM4 test vector encrypt (no padding)','t.sm4katdec':'SM4 test vector decrypt','t.sm4pkcs7':'SM4 ECB PKCS#7 round trip',
@@ -91,6 +97,7 @@ en: {...COMMON,
  't.sm2tamper':'Verification fails for tampered message','t.sm2wrongid':'Verification fails with wrong ID','t.sm2enc':'SM2 encrypt/decrypt round trip',
 }};
 export const LANGS=['zh','en'];
+export const CANON='https://www.frankxue.dev/gm-crypto-web/';
 let cur='zh';
 export const lang=()=>cur;
 export function t(k,p){const v=DICT[cur][k];if(v===undefined)return `⟦${k}⟧`;return typeof v==='function'?v(p||{}):v}
@@ -104,6 +111,7 @@ export function detect(){
 export function apply(l,save){cur=l;if(save){try{localStorage.setItem('gmweb.lang',l)}catch{}}
  document.documentElement.lang=l==='zh'?'zh-CN':'en';document.title=t('meta.title');
  document.querySelector('meta[name=description]').setAttribute('content',t('meta.desc'));
+ const c=document.querySelector('link[rel=canonical]');if(c)c.href=CANON+'?lang='+l;
  document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
  document.querySelectorAll('[data-i18n-aria]').forEach(e=>e.setAttribute('aria-label',t(e.dataset.i18nAria)));
  document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.setAttribute('placeholder',t(e.dataset.i18nPh)));
