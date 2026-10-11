@@ -1,4 +1,4 @@
-// Usage: BASE_URL=... [CHROME_PATH=...] [MOBILE=1] [SHOT_LANG=en SHOT=path.png] node run.cjs chromium|firefox|webkit
+// Usage: BASE_URL=... [CHROME_PATH=...] [MOBILE=1] [SHOT_LANG=en SHOT=path.png] [SHOTDIR=dir] node run.cjs chromium|firefox|webkit
 // Runs the full suite in both languages plus i18n checks. Exit code 0 only if everything passes.
 const pw=require('playwright-core');const name=process.argv[2]||'chromium';
 const base=process.env.BASE_URL||'http://127.0.0.1:8765/';const mobile=!!process.env.MOBILE;
@@ -278,5 +278,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
   chk(`err ${tag}: section-level error slot returns to section end`,await p.evaluate(()=>{const e=document.getElementById('err-sm4');return e.parentElement.id==='s-sm4'}));
   await ctx.close()}
  report('round3',X)}
+await require('./qa.cjs')({b,name,withQ,report,allErrs});
+if(process.env.SHOTDIR&&!mobile&&process.env.SHOTS!=='0')await require('./shots.cjs')({b,name,withQ,dir:process.env.SHOTDIR});
 report('static',report0);console.log('TOTAL',passed+'/'+total);console.log('errors',JSON.stringify(allErrs));console.log('external',JSON.stringify([...new Set(allExt)]));
 await b.close();process.exit(allOk&&!allErrs.length&&!allExt.length?0:1)})();

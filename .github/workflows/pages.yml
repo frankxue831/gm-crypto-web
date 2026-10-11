@@ -46,6 +46,11 @@ jobs:
           base64 -d www/og.png.b64 > www/og.png
           sha256sum www/og.png
           rm www/og.png.b64
+      - name: Stamp commit into footer and HTML comment
+        run: |
+          SHORT="${GITHUB_SHA:0:7}"
+          sed -i "s/__COMMIT__/$SHORT/g" www/index.html
+          grep -q "<!-- commit: $SHORT -->" www/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

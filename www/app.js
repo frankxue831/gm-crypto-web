@@ -172,4 +172,4 @@ const setAuto=R=>{autoResults=R;stState=R.length===CASES.length&&R.every(x=>x.pa
 export function selftest(){const R=runCases();setAuto(R);lastResults=R;render();return R}
 // silent self-test on load: drives the badge only; the self-test section stays untouched until asked
 setTimeout(()=>{try{setAuto(runCases())}catch{autoResults=[];stState='bad'}render()},0);
-window.selftest=selftest;window.__setLang=l=>setLang(l,true);$('selftest').addEventListener('click',selftest);window.__ready=true;
+window.selftest=selftest;window.__setLang=l=>setLang(l,true);$('selftest').addEventListener('click',selftest);{const c=$('commit');if(c&&c.textContent==='__COMMIT__'){c.textContent='dev';c.href='https://github.com/frankxue831/gm-crypto-web'}}window.__ready=true;
