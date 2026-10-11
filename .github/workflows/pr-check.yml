@@ -11,13 +11,14 @@ concurrency:
 env:
   WASM_BINDGEN_VERSION: 0.2.129   # must match wasm-bindgen in Cargo.lock (same as pages.yml)
 jobs:
-  browser-tests:          # stable name: require "browser-tests" in branch protection
-    name: browser-tests
+  build:
+    name: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    outputs:
+      short: ${{ steps.stamp.outputs.short }}
     steps:
       - uses: actions/checkout@v4
-      # ---- build: same steps and toolchain as pages.yml
       - name: Install toolchain (from rust-toolchain.toml)
         run: rustup show active-toolchain || rustup toolchain install
       - uses: actions/cache@v4
@@ -51,7 +52,31 @@ jobs:
           sed -i "s/__COMMIT__/$SHORT/g" www/index.html
           grep -q "<!-- commit: $SHORT -->" www/index.html
           echo "short=$SHORT" >> "$GITHUB_OUTPUT"
-      # ---- browsers
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: www
+          retention-days: 3
+
+  test:
+    name: test (${{ matrix.browser }}, ${{ matrix.viewport }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        viewport: [desktop, mobile]
+    env:
+      BR: ${{ matrix.browser }}
+      VP: ${{ matrix.viewport }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: www
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -64,47 +89,67 @@ jobs:
         id: pwcache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PW_VERSION }}
-      - name: Install Playwright browsers
+          key: ${{ runner.os }}-playwright-${{ env.PW_VERSION }}-${{ matrix.browser }}
+      - name: Install Playwright browser
         if: steps.pwcache.outputs.cache-hit != 'true'
         working-directory: pw
-        run: npx playwright-core install chromium firefox webkit
+        run: npx playwright-core install $BR
       - name: Install browser system dependencies
         working-directory: pw
-        run: sudo npx playwright-core install-deps chromium firefox webkit
-      # ---- run the suite: 3 browsers x desktop/mobile; fail at the end if any run failed
+        run: sudo npx playwright-core install-deps $BR
       - name: Run browser tests
-        id: run
         env:
-          EXPECT_COMMIT: ${{ steps.stamp.outputs.short }}
+          EXPECT_COMMIT: ${{ needs.build.outputs.short }}
         run: |
           PORT=$(python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1])')
           python3 -m http.server "$PORT" --bind 127.0.0.1 -d www > server.log 2>&1 &
           for i in $(seq 50); do curl -sf "http://127.0.0.1:$PORT/" > /dev/null && break; sleep 0.2; done
           export BASE_URL="http://127.0.0.1:$PORT/"
-          mkdir -p shots logs
-          : > results.md; status=0
-          for br in chromium firefox webkit; do for vp in desktop mobile; do
-            m=""; [ $vp = mobile ] && m=1
-            if [ "$br" = chromium ] && [ $vp = desktop ]; then sd="$PWD/shots"; else sd=""; fi
-            set +e
-            (cd pw && MOBILE=$m SHOTDIR=$sd node run.cjs $br) > logs/$br-$vp.log 2>&1; rc=$?
-            set -e
-            tot=$(grep -oP '^TOTAL \K.*' logs/$br-$vp.log || echo "crashed")
-            fails=$(grep -c '^FAIL' logs/$br-$vp.log || true)
-            if [ $rc -eq 0 ]; then icon="✅"; else icon="❌"; status=1; fi
-            echo "| $br | $vp | $icon | $tot | $fails |" >> results.md
-            grep '^FAIL' logs/$br-$vp.log | head -20 | sed "s/^/    $br $vp: /" >> failures.txt || true
-          done; done
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          { echo "| Browser | Viewport | Result | Passed | Failed |"; echo "|---|---|---|---|---|"; cat results.md; } > table.md
-          cat table.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload screenshots and logs
-        id: upload
+          mkdir -p shots logs res
+          m=""; [ $VP = mobile ] && m=1
+          if [ "$BR" = chromium ] && [ $VP = desktop ]; then sd="$PWD/shots"; else sd=""; fi
+          set +e
+          (cd pw && MOBILE=$m SHOTDIR=$sd node run.cjs $BR) > logs/$BR-$VP.log 2>&1; rc=$?
+          set -e
+          tot=$(grep -oP '^TOTAL \K.*' logs/$BR-$VP.log || echo "crashed")
+          fails=$(grep -c '^FAIL' logs/$BR-$VP.log || true)
+          if [ $rc -eq 0 ]; then icon="✅"; else icon="❌"; fi
+          echo "| $BR | $VP | $icon | $tot | $fails |" > res/$BR-$VP.md
+          grep '^FAIL' logs/$BR-$VP.log | head -20 | sed "s/^/    $BR $VP: /" > res/$BR-$VP.fail || true
+          tail -50 logs/$BR-$VP.log
+          exit $rc
+      - name: Upload leg results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ steps.stamp.outputs.short }}
+          name: leg-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: |
+            shots/*.png
+            logs/*.log
+            res/*
+          if-no-files-found: warn
+          retention-days: 3
+
+  browser-tests:          # stable name: require "browser-tests" in branch protection
+    name: browser-tests
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: leg-*
+          merge-multiple: true
+      - name: Summarise
+        run: |
+          { echo "| Browser | Viewport | Result | Passed | Failed |"; echo "|---|---|---|---|---|"; cat res/*.md 2>/dev/null || echo "| _no results_ | | ❌ | | |"; } > table.md
+          cat res/*.fail 2>/dev/null > failures.txt || true
+          cat table.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload screenshots and logs
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ needs.build.outputs.short }}
           path: |
             shots/*.png
             logs/*.log
@@ -115,7 +160,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
-          SHORT: ${{ steps.stamp.outputs.short }}
+          SHORT: ${{ needs.build.outputs.short }}
         with:
           script: |
             const fs = require('fs');
@@ -131,6 +176,7 @@ jobs:
             const mine = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
             if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             else await github.rest.issues.createComment({ owner, repo, issue_number, body });
-      - name: Fail if any browser run failed
-        if: steps.run.outputs.status != '0'
-        run: exit 1
+      - name: Fail unless build and all 6 legs passed
+        if: needs.build.result != 'success' || needs.test.result != 'success'
+        run: |
+          echo "build=${{ needs.build.result }} test=${{ needs.test.result }}"; exit 1
