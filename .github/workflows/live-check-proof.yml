@@ -1,0 +1,36 @@
+# TEMPORARY proof of the live check; reverted in the next commit. Read-only against the live site.
+name: live-check proof (temporary)
+on:
+  push:
+    branches: [ci/post-deploy-live-check]
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {sparse-checkout: pw}
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - working-directory: pw
+        run: npm install --no-audit --no-fund && npx playwright-core install --with-deps chromium
+      - name: Live check vs WRONG expected SHA (must fail)
+        working-directory: pw
+        env: {EXPECTED_SHA: '0000000', EXPECTED_CASES: '11', DEADLINE_S: '300'}
+        run: node live-check.cjs
+  green:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {sparse-checkout: pw}
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - working-directory: pw
+        run: npm install --no-audit --no-fund && npx playwright-core install --with-deps chromium
+      - name: Live check vs deployed SHA d55e732 (must pass)
+        working-directory: pw
+        env: {EXPECTED_SHA: 'd55e732', EXPECTED_CASES: '11', DEADLINE_S: '300'}
+        run: node live-check.cjs
