@@ -3,6 +3,17 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: 'Skip build/deploy; only run the live check against the current live site'
+        type: boolean
+        default: false
+      expected_sha:
+        description: 'check_only: commit the live footer must show (default: this run SHA)'
+        required: false
+      url:
+        description: 'check_only: URL to check (default: live tool)'
+        required: false
 permissions:
   contents: read
   pages: write
@@ -14,6 +25,7 @@ env:
   WASM_BINDGEN_VERSION: 0.2.129   # must match wasm-bindgen in Cargo.lock
 jobs:
   build:
+    if: ${{ !inputs.check_only }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,3 +76,30 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  live-check:
+    # Runs after a real deploy, or alone when dispatched with check_only (never touches the site).
+    needs: deploy
+    if: ${{ always() && (needs.deploy.result == 'success' || (inputs.check_only && needs.deploy.result == 'skipped')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: pw
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright Chromium
+        working-directory: pw
+        run: npm install --no-audit --no-fund && npx playwright-core install --with-deps chromium
+      - name: Live check (zh + en, badge 11/11, footer commit)
+        working-directory: pw
+        env:
+          LIVE_URL: ${{ inputs.url || 'https://www.frankxue.dev/gm-crypto-web/' }}
+          EXPECTED_SHA: ${{ inputs.expected_sha || github.sha }}
+          EXPECTED_CASES: '11'
+          DEADLINE_S: '300'
+        run: node live-check.cjs
