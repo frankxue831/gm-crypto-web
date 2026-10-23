@@ -93,8 +93,8 @@ function render(){for(const s in errs){const el=$('err-'+s),x=errs[s];el.textCon
  metaAll()}
 function setLang(l,save){apply(l,save);render()}
 setLang(detect(),false);
-document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{setLang(b.dataset.lang,true);
- const u=new URL(location.href);if(u.searchParams.has('lang')){u.searchParams.set('lang',b.dataset.lang);history.replaceState(null,'',u)}}));
+document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{const l=b.dataset.lang;setLang(l,true);
+ const u=new URL(location.href);if(u.searchParams.has('lang')){u.searchParams.set('lang',l);history.replaceState(null,'',u)}}));
 const OUTS={sm3go:['sm3out'],sm4enc:['sm4out'],sm4dec:['sm4out'],sm2sign:['sm2sig'],sm2enc:['sm2ct'],sm2dec:['sm2pt']};
 const on=(id,sec,f)=>$(id).addEventListener('click',()=>{errs[sec]=null;const o=OUTS[id]||[];try{f();okRes(o)}catch(x){errs[sec]=toErr(x);noRes(o)}render()});
 // ECB has no IV
@@ -143,10 +143,10 @@ $('try').addEventListener('click',()=>{for(const s in errs)errs[s]=null;
  try{exSM4();sm4(true);okRes(['sm4out'])}catch(x){errs.sm4=toErr(x);noRes(['sm4out'])}
  try{exSM2();doSign();doVerify()}catch(x){errs.sm2=toErr(x)}
  render();showSM4()});
-// bring the SM4 output + its ✓ line into view below the sticky nav, then flash the output once
-const NAV_GAP=80,reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+// bring the SM4 output + its ✓ line into view below the sticky header (+ the mobile section bar), then flash the output once
+const NAV_GAP=()=>{let b=document.querySelector('.site-header').getBoundingClientRect().height;const r=$('rail');if(matchMedia('(max-width: 759px)').matches)b+=r.getBoundingClientRect().height;return b+16},reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function showSM4(){const lab=document.querySelector('label[for=sm4out]'),box=$('sm4out').closest('.out');
- const y=Math.max(0,lab.getBoundingClientRect().top+scrollY-NAV_GAP);
+ const y=Math.max(0,lab.getBoundingClientRect().top+scrollY-NAV_GAP());
  document.documentElement.style.scrollBehavior='auto';window.scrollTo({top:y,behavior:reduced()?'instant':'smooth'});document.documentElement.style.scrollBehavior='';
  $('sm4out').focus({preventScroll:true});box.classList.remove('flash');void box.offsetWidth;box.classList.add('flash');
  clearTimeout(box._f);box._f=setTimeout(()=>box.classList.remove('flash'),1600)}

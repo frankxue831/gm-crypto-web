@@ -40,7 +40,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  chk('try: SM4 vector computed',(await p.inputValue('#sm4out'))==='681edf34d206965e86b3e94f536e4246');
  chk('try: SM4 match badge',(await tx('#sm4match')).includes(S.match),await tx('#sm4match'));
  chk('try: SM2 signed+verified',(await tx('#sm2vres')).includes(S.ok),await tx('#sm2vres'));
- await p.waitForTimeout(1200);const top=await p.evaluate(()=>document.querySelector('label[for=sm4out]').getBoundingClientRect().top);const nb=await p.evaluate(()=>document.querySelector('nav.nav').getBoundingClientRect().bottom);chk('try: scrolled to SM4 output (below nav, in view)',top>=nb-1&&top<500,top+' nav '+nb);
+ await p.waitForTimeout(1200);const top=await p.evaluate(()=>document.querySelector('label[for=sm4out]').getBoundingClientRect().top);const nb=await p.evaluate(()=>(()=>{const h=document.querySelector('.site-header').getBoundingClientRect().bottom;return matchMedia('(max-width: 759px)').matches?Math.max(h,document.getElementById('rail').getBoundingClientRect().bottom):h})());chk('try: scrolled to SM4 output (below sticky header/bar, in view)',top>=nb-1&&top<500,top+' nav '+nb);
  chk('try: focus on SM4 output',(await p.evaluate(()=>document.activeElement&&document.activeElement.id))==='sm4out');
  // labels: type + byte length
  chk('label sm4key Hex·16',(await tx('#m-sm4key')).startsWith('Hex')&&(await tx('#m-sm4key')).includes('16'),await tx('#m-sm4key'));
@@ -105,7 +105,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  chk('no missing i18n keys',miss.length===0,miss.join(','));
  chk('html lang',(await p.evaluate(()=>document.documentElement.lang))===S.htmlLang);
  chk('title',S.title.test(await p.title()),await p.title());
- if(lg==='en'){const cjk=await p.evaluate(()=>{const tx=document.body.innerText.replace(/中/g,'');const inputs=[...document.querySelectorAll('textarea')].map(e=>e.value).join('');return (tx.match(/[\u4e00-\u9fff]+/g)||[]).filter(w=>!inputs.includes(w)).slice(0,5)});
+ if(lg==='en'){const cjk=await p.evaluate(()=>{const tx=document.body.innerText.replace(/中文/g,'');const inputs=[...document.querySelectorAll('textarea')].map(e=>e.value).join('');return (tx.match(/[\u4e00-\u9fff]+/g)||[]).filter(w=>!inputs.includes(w)).slice(0,5)});
   chk('no Chinese text in English UI',cjk.length===0,cjk.join(','))}
  if(process.env.SHOT&&process.env.SHOT_LANG===lg){await click('ex-sm3');await click('sm3go');await click('ex-sm4');await click('sm4enc');for(const s of ['sm3','sm4','sm2'])await p.evaluate(s=>document.getElementById('err-'+s).textContent='',s);
   await click('ex-sm2');await click('sm2sign');await click('sm2verify');await click('selftest');await p.evaluate(()=>window.scrollTo(0,0));await p.screenshot({path:process.env.SHOT,fullPage:true})}
@@ -115,14 +115,16 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  for(const [loc,exp] of [['en-US','en'],['zh-CN','zh'],['zh-TW','zh'],['fr-FR','en']]){const [ctx,p]=await newPage(loc);await p.goto(base);await p.waitForFunction('window.__ready');
   const hl=await p.evaluate(()=>document.documentElement.lang);chk(`detect ${loc} → ${exp}`,hl===L[exp].htmlLang,hl);await ctx.close()}
  const [ctx,p]=await newPage('en-US');await p.goto(base);await p.waitForFunction('window.__ready');
- const t0=await p.title();await p.click('#lang-zh');
+ const SITE=async()=>p.evaluate(()=>[document.querySelector('.site-mark'),...document.querySelectorAll('a.primary-nav__link')].map(e=>e.getAttribute('href')+(e.getAttribute('aria-current')||'')).join(' '));chk('site header links: en paths',(await SITE())==='https://www.frankxue.dev/ https://www.frankxue.dev/ https://www.frankxue.dev/about/ https://www.frankxue.dev/projects/page https://www.frankxue.dev/notes/',await SITE());
+ const t0=await p.title();await p.click('#langsw');
  chk('toggle → zh: html lang/title/meta',await p.evaluate(()=>document.documentElement.lang)==='zh-CN'&&(await p.title())!==t0&&/国密/.test(await p.evaluate(()=>document.querySelector('meta[name=description]').content)));
  chk('toggle saved in localStorage',(await p.evaluate(()=>localStorage.getItem('gmweb.lang')))==='zh');
- chk('aria-pressed updated',(await p.getAttribute('#lang-zh','aria-pressed'))==='true'&&(await p.getAttribute('#lang-en','aria-pressed'))==='false');
+chk('site header links: zh paths after toggle',(await SITE())==='https://www.frankxue.dev/zh/ https://www.frankxue.dev/zh/ https://www.frankxue.dev/zh/about/ https://www.frankxue.dev/zh/projects/page https://www.frankxue.dev/zh/notes/',await SITE());
+ chk('toggle now offers EN, keeps its accessible name',await p.evaluate(()=>{const b=document.getElementById('langsw');return b.dataset.lang==='en'&&b.textContent==='⇄EN'&&b.getAttribute('aria-label')==='切换语言'&&document.querySelectorAll('[data-lang]').length===1}));
  // error re-renders in new language
- await p.fill('#sm4key','zz');await p.click('#sm4enc');const ez=await p.textContent('#err-sm4');await p.click('#lang-en');const ee=await p.textContent('#err-sm4');
+ await p.fill('#sm4key','zz');await p.click('#sm4enc');const ez=await p.textContent('#err-sm4');await p.click('#langsw');const ee=await p.textContent('#err-sm4');
  chk('existing error switches language',ez.startsWith('错误：')&&ee.startsWith('Error: ')&&/invalid hex/.test(ee),ez+' | '+ee);
- await p.click('#lang-zh');await p.reload();await p.waitForFunction('window.__ready');
+ await p.click('#langsw');await p.reload();await p.waitForFunction('window.__ready');
  chk('persists after reload (en browser, saved zh)',(await p.evaluate(()=>document.documentElement.lang))==='zh-CN');
  await p.goto(withQ({lang:'en'}));await p.waitForFunction('window.__ready');
  chk('?lang=en wins over saved zh',(await p.evaluate(()=>document.documentElement.lang))==='en');
@@ -132,7 +134,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  await ctx.close();report('i18n',X)}
 // ---- how-to row + live self-test badge
 {const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,120)});
- const BADGE={zh:{ok:'✓ 自检 11/11',run:'自检中…'},en:{ok:'✓ Self-test 11/11',run:'Checking…'}};
+ const BADGE={zh:{ok:'自检 11/11',run:'自检中…'},en:{ok:'Self-test 11/11',run:'Checking…'}};
  const HOW={zh:['选算法','点「试一下示例」','对照国标结果'],en:['Pick an algorithm','Click "Try an example"','Compare with the standard result']};
  const mk=async(vp,locale)=>{const o={viewport:vp,locale};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
   p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
@@ -140,21 +142,22 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
   const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
   const h=await p.evaluate(()=>{const o=document.getElementById('howto'),r=o.getBoundingClientRect(),lis=[...o.children].map(l=>{const rs=[...l.getClientRects()];const b=l.getBoundingClientRect();return {top:Math.round(b.top),h:b.height,rects:rs.length,txt:l.innerText.replace(/\s+/g,' ').trim()}});
    const tg=document.getElementById('tagline').getBoundingClientRect(),tr=document.getElementById('try').getBoundingClientRect();
-   return {bottom:r.bottom,vh:innerHeight,lines:new Set(lis.map(l=>l.top)).size,lis,between:r.top>=tg.bottom-1&&r.bottom<=tr.top+1,sw:document.documentElement.scrollWidth,iw:innerWidth}});
+   return {bottom:r.bottom,vh:innerHeight,lines:new Set(lis.map(l=>l.top)).size,lis,shown:getComputedStyle(o).display!=='none',row:r.top>=tg.bottom-1&&r.top<tr.bottom&&r.bottom>tr.top&&r.left>=tr.right,sw:document.documentElement.scrollWidth,iw:innerWidth}});
   chk(`howto ${tag}: text`,JSON.stringify(h.lis.map(l=>l.txt.replace(/^\d\s*/,'')))===JSON.stringify(HOW[lg]),h.lis.map(l=>l.txt).join('|'));
-  chk(`howto ${tag}: in first viewport`,h.bottom>0&&h.bottom<=h.vh,h.bottom+'/'+h.vh);
-  chk(`howto ${tag}: between tagline and Try button`,h.between);
-  chk(`howto ${tag}: ≤2 lines, steps unbroken`,h.lines<=(vp.width<500?2:1)&&h.lis.every(l=>l.h<30),h.lines+' lines '+h.lis.map(l=>l.h).join(','));
+  if(vp.width<760)chk(`howto ${tag}: hidden on mobile (approved mock), text kept in DOM`,!h.shown);
+  else{chk(`howto ${tag}: in first viewport`,h.bottom>0&&h.bottom<=h.vh,h.bottom+'/'+h.vh);
+   chk(`howto ${tag}: one muted line beside the Try link`,h.row);
+   chk(`howto ${tag}: 1 line, steps unbroken`,h.lines===1&&h.lis.every(l=>l.h<30),h.lines+' lines '+h.lis.map(l=>l.h).join(','))}
   chk(`howto ${tag}: no horizontal overflow`,h.sw<=h.iw,h.sw+'/'+h.iw);
   await p.waitForFunction(()=>document.getElementById('stbadge').className!=='',null,{timeout:10000}).catch(()=>{});
-  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,col:getComputedStyle(e).color,href:e.getAttribute('href')}});
-  chk(`badge ${tag}: green with real count`,bd.c==='ok'&&bd.t===BADGE[lg].ok&&bd.col==='rgb(26, 127, 55)'&&bd.href==='#s-test',JSON.stringify(bd));
-  const geo=await p.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(),b=document.getElementById('stbadge').getBoundingClientRect(),h=document.querySelector('h1').getBoundingClientRect(),l=document.querySelector('.langs').getBoundingClientRect();
-   const ov=(a,c)=>a.left<c.right&&a.right>c.left&&a.top<c.bottom&&a.bottom>c.top;return {ovLang:ov(b,l),below:b.top>=h.bottom-1,right:b.left>=h.right-1&&b.top<h.bottom,inView:b.bottom<=innerHeight}});
-  chk(`badge ${tag}: no overlap with language buttons`,!geo.ovLang&&geo.inView,JSON.stringify(geo));
-  chk(`badge ${tag}: ${vp.width<500?'under title':'right of title'}`,vp.width<500?geo.below:geo.right,JSON.stringify(geo));
-  if(vp.width===1280){const other=lg==='zh'?'en':'zh';await p.click('#lang-'+other);
-   chk(`badge ${tag}: switches language`,(await p.textContent('#stbadge'))===BADGE[other].ok,await p.textContent('#stbadge'));await p.click('#lang-'+lg);
+  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,dot:getComputedStyle(e,'::before').backgroundColor,href:e.getAttribute('href'),live:e.getAttribute('aria-live')}});
+  chk(`badge ${tag}: green dot with real count`,bd.c==='ok'&&bd.t===BADGE[lg].ok&&bd.dot==='rgb(20, 120, 56)'&&bd.href==='#s-test'&&bd.live==='polite',JSON.stringify(bd));
+  const geo=await p.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(),b=document.getElementById('stbadge').getBoundingClientRect(),h=document.querySelector('h1').getBoundingClientRect(),l=document.getElementById('langsw').getBoundingClientRect();
+   const ov=(a,c)=>a.left<c.right&&a.right>c.left&&a.top<c.bottom&&a.bottom>c.top;return {ovLang:ov(b,l),above:b.bottom<=h.top+1,right:Math.abs(b.right-h.right)<2||b.right>h.right,inView:b.bottom<=innerHeight}});
+  chk(`badge ${tag}: no overlap with the language toggle`,!geo.ovLang&&geo.inView,JSON.stringify(geo));
+  chk(`badge ${tag}: status at the right end of the eyebrow, above the title`,geo.above&&geo.right,JSON.stringify(geo));
+  if(vp.width===1280){const other=lg==='zh'?'en':'zh';await p.click('#langsw');
+   chk(`badge ${tag}: switches language`,(await p.textContent('#stbadge'))===BADGE[other].ok,await p.textContent('#stbadge'));await p.click('#langsw');
    chk(`self-test section untouched by silent run ${tag}`,(await p.textContent('#testsum'))==='');
    await p.click('#stbadge');await p.waitForTimeout(900);
    const st=await p.evaluate(()=>({top:document.getElementById('s-test').getBoundingClientRect().top,atEnd:scrollY+innerHeight>=document.documentElement.scrollHeight-2,vis:document.getElementById('s-test').getBoundingClientRect().top<innerHeight-100,hash:location.hash,rows:document.getElementById('results').textContent.split('\n').length}));
@@ -164,8 +167,8 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  for(const lg of ['zh','en']){const ctx=await b.newContext({viewport:{width:1280,height:800}});const p=await ctx.newPage();
   await p.route(/\.wasm(\?|$)/,r=>r.abort());await p.goto(withQ({lang:lg}));
   await p.waitForFunction(()=>document.getElementById('stbadge').textContent!=='',null,{timeout:5000}).catch(()=>{});await p.waitForTimeout(1500);
-  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge');return {t:e.textContent,c:e.className,col:getComputedStyle(e).color}});
-  chk(`wasm blocked ${lg}: badge not green`,bd.c!=='ok'&&!bd.t.startsWith('✓')&&bd.col!=='rgb(26, 127, 55)'&&bd.t!=='',JSON.stringify(bd));await ctx.close()}
+  const bd=await p.evaluate(()=>{const e=document.getElementById('stbadge'),d=getComputedStyle(e,'::before');return {t:e.textContent,c:e.className,dot:d.display==='none'?'none':d.backgroundColor}});
+  chk(`wasm blocked ${lg}: badge not green`,bd.c!=='ok'&&!/11\/11/.test(bd.t)&&bd.dot!=='rgb(20, 120, 56)'&&bd.t!=='',JSON.stringify(bd));await ctx.close()}
  report('howto+badge',X)}
 // ---- round 3: size limit, scroll-to-result, SM4 hint + friendly decrypt errors, canonical
 {const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,160)});
@@ -173,7 +176,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
   en:{big1:'Input exceeds 1 MB; this tool does not support inputs that large',big256:'Input exceeds 256 KB; this tool does not support inputs that large',match:'Matches the official test vector',hint:['To check a ciphertext','Parse plaintext with the binary encoding too','Mode','Padding','IV','Decrypt','ECB with no padding cannot detect a wrong ciphertext'],pad:'padding check did not pass',noPad:'decryption without padding performs no check'}};
  const mk=async(vp,locale,extra={})=>{const o={viewport:vp,locale,...extra};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
   p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
- const vis=p=>p.evaluate(()=>{const nav=document.querySelector('nav.nav').getBoundingClientRect().bottom,o=document.getElementById('sm4out').getBoundingClientRect(),m=document.getElementById('sm4match').getBoundingClientRect();
+ const vis=p=>p.evaluate(()=>{const nav=(()=>{const h=document.querySelector('.site-header').getBoundingClientRect().bottom;return matchMedia('(max-width: 759px)').matches?Math.max(h,document.getElementById('rail').getBoundingClientRect().bottom):h})(),o=document.getElementById('sm4out').getBoundingClientRect(),m=document.getElementById('sm4match').getBoundingClientRect();
   const full=r=>r.height>0&&r.top>=nav-0.5&&r.bottom<=innerHeight+0.5;return {nav:Math.round(nav),out:[Math.round(o.top),Math.round(o.bottom)],m:[Math.round(m.top),Math.round(m.bottom)],vh:innerHeight,ok:full(o)&&full(m),under:m.top-o.bottom}});
  for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`,S=R3[lg];
   const [ctx,p]=await mk(vp,lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
@@ -194,7 +197,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  for(const lg of ['zh','en']){const S=R3[lg];const [ctx,p]=await mk(mobile?{width:390,height:844}:{width:1280,height:800},lg==='zh'?'zh-CN':'en-US');await p.goto(withQ({lang:lg}));await p.waitForFunction('window.__ready');
   const hint=await p.textContent('#sm4check');chk(`hint ${lg}: present with real labels`,S.hint.every(s=>hint.includes(s)),hint);
   const can=await p.getAttribute('link[rel=canonical]','href');chk(`canonical ${lg}: follows language`,can==='https://www.frankxue.dev/gm-crypto-web/?lang='+lg,can);
-  const other=lg==='zh'?'en':'zh';await p.click('#lang-'+other);const can2=await p.getAttribute('link[rel=canonical]','href');await p.click('#lang-'+lg);
+  const other=lg==='zh'?'en':'zh';await p.click('#langsw');const can2=await p.getAttribute('link[rel=canonical]','href');await p.click('#langsw');
   chk(`canonical ${lg}: switches to ?lang=${other}`,can2==='https://www.frankxue.dev/gm-crypto-web/?lang='+other,can2);
   if(name==='chromium')await p.evaluate(()=>{window.__lt=[];new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push({s:e.startTime,d:e.duration}))).observe({type:'longtask',buffered:false})});
   // 10 MB paste: every action shows the message within 1 s and the page stays responsive
@@ -260,7 +263,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
   await p.evaluate(()=>{const e=document.getElementById('sm4in');e.value='00'.repeat(300*1024);e.dispatchEvent(new Event('input',{bubbles:true}))});await p.click('#sm4enc');
   await p.evaluate(()=>document.getElementById('sm4in').scrollIntoView({block:'center'}));await p.waitForTimeout(300);
   const g=await p.evaluate(()=>{const i=document.getElementById('sm4in'),e=document.getElementById('err-sm4'),o=document.getElementById('sm4out');const ri=i.getBoundingClientRect(),re=e.getBoundingClientRect();
-   const nav=document.querySelector('nav.nav').getBoundingClientRect().bottom,inV=r=>r.top>=nav-1&&r.bottom<=innerHeight+1&&r.height>0;
+   const nav=(()=>{const h=document.querySelector('.site-header').getBoundingClientRect().bottom;return matchMedia('(max-width: 759px)').matches?Math.max(h,document.getElementById('rail').getBoundingClientRect().bottom):h})(),inV=r=>r.top>=nav-1&&r.bottom<=innerHeight+1&&r.height>0;
    return {out:o.value,ph:o.placeholder,bad:i.classList.contains('badf'),err:e.textContent,gap:Math.round(re.top-ri.bottom),next:i.nextElementSibling===e,inView:inV(ri)&&inV(re)}});
   chk(`err ${tag}: oversized SM4 input clears old ciphertext, shows "${NR[lg]}"`,ok1&&g.out===''&&g.ph===NR[lg],JSON.stringify(g).slice(0,160));
   chk(`err ${tag}: input red-bordered, error directly under it, both on screen`,g.bad&&g.next&&g.gap>=0&&g.gap<30&&g.inView&&g.err.includes(S.big256),JSON.stringify({...g,err:g.err.slice(0,30)}));

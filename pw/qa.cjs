@@ -34,14 +34,14 @@ module.exports=async({b,name,withQ,report,allErrs})=>{
    chk('stamp',`footer commit ${exp||'dev'}`,exp?c.t===exp&&c.h.endsWith('/commit/'+exp):c.t==='dev',JSON.stringify(c));
    if(exp){const html=await (await fetch(withQ({}))).text();chk('stamp','HTML comment carries the commit',html.includes('<!-- commit: '+exp+' -->'))}}
   await ctx.close();
-  // scroll and badge: badge must not overlap the language buttons at the 520/521 breakpoint
-  for(const w of [520,521]){const [c2,q]=await mk({width:w,height:844},lg);
+  // scroll and badge: badge must not overlap the language toggle around the 520/521 and 759/760 breakpoints
+  for(const w of [520,521,759,760]){const [c2,q]=await mk({width:w,height:844},lg);
    await q.waitForFunction(()=>document.getElementById('stbadge').className==='ok');
-   const g=await q.evaluate(()=>{const a=document.getElementById('stbadge').getBoundingClientRect(),l=document.querySelector('.langs').getBoundingClientRect();
+   const g=await q.evaluate(()=>{const a=document.getElementById('stbadge').getBoundingClientRect(),l=document.getElementById('langsw').getBoundingClientRect();
     return {ov:a.left<l.right&&a.right>l.left&&a.top<l.bottom&&a.bottom>l.top,sw:document.documentElement.scrollWidth,iw:innerWidth}});
-   chk('badge',`no overlap with language buttons, no overflow at ${w}px`,!g.ov&&g.sw<=g.iw,JSON.stringify(g));await c2.close()}
+   chk('badge',`no overlap with the language toggle, no overflow at ${w}px`,!g.ov&&g.sw<=g.iw,JSON.stringify(g));await c2.close()}
   // language and canonical: button switch updates the URL-independent state and title
-  {const [c3,q]=await mk({width:1280,height:800},lg);const other=lg==='zh'?'en':'zh';await q.click('#lang-'+other);
+  {const [c3,q]=await mk({width:1280,height:800},lg);const other=lg==='zh'?'en':'zh';await q.click('#langsw');
    const s=await q.evaluate(()=>({lang:document.documentElement.lang,can:document.querySelector('link[rel=canonical]')?.href}));
-   chk('language',`switch button → html lang ${other} and canonical ?lang=${other}`,s.lang.startsWith(other)&&s.can.endsWith('?lang='+other),JSON.stringify(s));await c3.close()}
+   chk('language',`⇄ toggle → html lang ${other} and canonical ?lang=${other}`,s.lang.startsWith(other)&&s.can.endsWith('?lang='+other),JSON.stringify(s));await c3.close()}
   report('qa',X)}};

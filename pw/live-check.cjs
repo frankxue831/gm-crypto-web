@@ -1,5 +1,6 @@
 // Post-deploy live check: loads the live tool in zh and en, waits for the
-// self-test badge, and requires "✓ … N/N" (N = expected case count) plus a
+// self-test badge, and requires class ok with "Self-test N/N" / "自检 N/N"
+// (N = expected case count; the green state is a CSS dot, not a ✓) plus a
 // footer commit equal to the deployed short SHA. Retries until DEADLINE_S
 // to absorb GitHub Pages / CDN propagation.
 const { chromium } = require('playwright-core');
@@ -19,7 +20,7 @@ async function checkOnce(browser, lang) {
     const badge = await page.$eval('#stbadge', b => ({ cls: b.className, text: b.textContent.trim() }));
     const commit = (await page.$eval('#commit', a => a.textContent.trim()));
     const errs = [];
-    if (badge.cls !== 'ok' || !badge.text.startsWith('✓') || !badge.text.includes(`${N}/${N}`)) errs.push(`badge "${badge.text}" (${badge.cls})`);
+    if (badge.cls !== 'ok' || !(badge.text === `Self-test ${N}/${N}` || badge.text === `自检 ${N}/${N}`)) errs.push(`badge "${badge.text}" (${badge.cls})`);
     if (commit !== SHA) errs.push(`footer commit ${commit} != ${SHA}`);
     console.log(`[${lang}] badge="${badge.text}" commit=${commit} ${errs.length ? 'FAIL' : 'OK'}`);
     return errs.join('; ') || null;
@@ -33,7 +34,7 @@ async function checkOnce(browser, lang) {
   for (;;) {
     attempt++;
     last = { zh: await checkOnce(browser, 'zh'), en: await checkOnce(browser, 'en') };
-    if (!last.zh && !last.en) { console.log(`PASS on attempt ${attempt}: ${BASE} is ✓ ${N}/${N} at ${SHA} in zh+en`); break; }
+    if (!last.zh && !last.en) { console.log(`PASS on attempt ${attempt}: ${BASE} is ok ${N}/${N} at ${SHA} in zh+en`); break; }
     console.log(`attempt ${attempt}: zh=${last.zh || 'ok'} en=${last.en || 'ok'}`);
     if (Date.now() + 20000 > DEADLINE) { await browser.close(); console.error(`::error::live check failed after ${attempt} attempts: zh=${last.zh || 'ok'} en=${last.en || 'ok'}`); process.exit(1); }
     await new Promise(r => setTimeout(r, 20000));
