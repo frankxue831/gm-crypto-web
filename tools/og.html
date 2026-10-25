@@ -1,8 +1,15 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:'EB Garamond';font-style:normal;font-weight:400 800;src:url('../www/fonts/eb-garamond-latin.woff2') format('woff2')}
+@font-face{font-family:'EB Garamond';font-style:italic;font-weight:400 800;src:url('../www/fonts/eb-garamond-italic-latin.woff2') format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:500;src:url('../www/fonts/ibm-plex-mono-500-latin.woff2') format('woff2')}
 html,body{margin:0;width:1200px;height:630px;overflow:hidden}
-body{background:#b4232a;font-family:"Noto Sans CJK SC","Noto Sans SC","PingFang SC",sans-serif;color:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 90px;box-sizing:border-box}
-.logo{width:110px;height:110px;border-radius:24px;background:#fff;color:#b4232a;font-size:72px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:36px}
-h1{font-size:84px;margin:0 0 10px;font-weight:700}
-h2{font-size:46px;margin:0 0 40px;font-weight:500;opacity:.95}
-p{font-size:30px;margin:0;background:#fff;color:#8a1b20;display:inline-block;padding:12px 22px;border-radius:12px;align-self:flex-start}
-</style></head><body><div class="logo">密</div><h1>国密在线工具</h1><h2>SM2 · SM3 · SM4 in your browser</h2><p>本地计算，不上传 · Runs locally, nothing uploaded</p></body></html>
+body{background:#f5f1e8;color:#1a1814;box-sizing:border-box;padding:84px 104px 92px;display:flex;flex-direction:column;justify-content:space-between;-webkit-font-smoothing:antialiased}
+.mark{display:flex;align-items:baseline;gap:22px;line-height:1}
+.glyph{font:italic 600 132px/0.8 'EB Garamond';color:#1e40af;margin-left:18px}
+.name{font:500 28px/1 'IBM Plex Mono';letter-spacing:.04em;color:#1a1814}
+h1{font:500 128px/1 'EB Garamond';letter-spacing:-.01em;margin:0 0 40px}
+p{font:400 44px/1.25 'EB Garamond';margin:0;max-width:900px}
+</style></head><body>
+<div class="mark"><span class="glyph">f</span><span class="name">frankxue.dev</span></div>
+<div><h1>gm-crypto-web</h1><p>Debug SM2/SM3/SM4 in your browser — computed locally, nothing uploaded.</p></div>
+</body></html>
