@@ -30,7 +30,7 @@ Out of scope (intentionally): accounts / backend / storage, X.509, GCM/CCM/XTS.
 
 ### Implementation and verification
 
-- Library: `gmcrypto-core` from [gm-crypto-rs](https://github.com/frankxue831/gm-crypto-rs) **v1.16.0 @ `5562004`** (git dependency pinned to that commit), default features, compiled to `wasm32-unknown-unknown` and exposed with `wasm-bindgen --target web`.
+- Library: `gmcrypto-core` from [gm-crypto-rs](https://github.com/frankxue831/gm-crypto-rs) **v1.17.0 @ `41d54a5`** (git dependency pinned to that commit), default features, compiled to `wasm32-unknown-unknown` and exposed with `wasm-bindgen --target web`.
 - Randomness: `getrandom` 0.4 (`wasm_js`, i.e. the browser's `crypto.getRandomValues`).
 - Verified: SM3 `"abc"` and the SM4 standard test vector; SM2 signing matches the **official GB/T 32918.2 Appendix A.2 vector** (fixed k, native Rust test).
 - **SM2 encryption is only cross-checked against an independent reference implementation (`ref_sm2enc.py`, Python), not an official test vector.**
@@ -83,7 +83,7 @@ Same as gm-crypto-rs: dual-licensed under MIT or Apache-2.0, at your option (see
 
 ### 底层实现与验证
 
-- 底层库：[gm-crypto-rs](https://github.com/frankxue831/gm-crypto-rs) 的 `gmcrypto-core` **v1.16.0 @ `5562004`**（git 依赖，固定提交），默认 features，编译为 `wasm32-unknown-unknown`，经 `wasm-bindgen --target web` 导出。
+- 底层库：[gm-crypto-rs](https://github.com/frankxue831/gm-crypto-rs) 的 `gmcrypto-core` **v1.17.0 @ `41d54a5`**（git 依赖，固定提交），默认 features，编译为 `wasm32-unknown-unknown`，经 `wasm-bindgen --target web` 导出。
 - 随机数：`getrandom` 0.4（`wasm_js`，即浏览器 `crypto.getRandomValues`）。
 - 已验证：SM3 `"abc"` 和 SM4 标准测试向量；SM2 签名通过 **GB/T 32918.2 附录 A.2 官方向量**（固定 k，原生 Rust 测试）。
 - **SM2 加密仅与独立参考实现（`ref_sm2enc.py`，Python）交叉验证，未对照官方测试向量。**
