@@ -135,7 +135,7 @@ chk('site header links: zh paths after toggle',(await SITE())==='https://www.fra
 // ---- how-to row + live self-test badge
 {const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,120)});
  const BADGE={zh:{ok:'自检 11/11',run:'自检中…'},en:{ok:'Self-test 11/11',run:'Checking…'}};
- const HOW={zh:['选算法','点「试一下示例」','对照国标结果'],en:['Pick an algorithm','Click "Try an example"','Compare with the standard result']};
+ const HOW={zh:['三种算法同在一页','点「试一下示例」','对照国标结果'],en:['All three algorithms, one page','Click "Try an example"','Compare with the standard result']};
  const mk=async(vp,locale)=>{const o={viewport:vp,locale};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
   p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
  for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`;

@@ -3,7 +3,7 @@ const COMMON={'enc.hex':'Hex','enc.b64':'Base64','mode.ecb':'ECB','mode.cbc':'CB
  'foot.repo':'github.com/frankxue831/gm-crypto-web','foot.libname':'gm-crypto-rs (gmcrypto-core v1.17.0)','foot.license':'MIT / Apache-2.0','w.iv':'IV','nav.sm3':'SM3','nav.sm4':'SM4','nav.sm2':'SM2','kind.hex':'Hex','kind.b64':'Base64','foot.homeLink':'www.frankxue.dev'};
 export const DICT = {
 zh: {...COMMON,
- 'howto.aria':'使用步骤','howto.1':'选算法','howto.2':'点「试一下示例」','howto.3':'对照国标结果',
+ 'howto.aria':'使用步骤','howto.1':'三种算法同在一页','howto.2':'点「试一下示例」','howto.3':'对照国标结果',
  'badge.run':'自检中…','badge.ok':p=>`自检 ${p.ok}/${p.n}`,'badge.bad':p=>`✗ ${p.ok}/${p.n}`,'badge.aria':'自检结果（SM3、SM4 对国标向量，SM2 做往返校验），点击查看详情','badge.title':'自检：SM3、SM4 对国标向量，SM2 做往返校验',
  'tagline':'在浏览器里调试 SM2/SM3/SM4；本地计算，不上传。','tryEx':'试一下示例','nav.test':'自检','nav.aria':'页面导航',
  'sm3.desc':'计算 UTF-8 文本的 SM3 摘要（256 位）。','sm4.desc':'用 16 字节密钥对数据做 SM4 加解密（ECB 或 CBC）。','sm2.desc':'生成 SM2 密钥对，进行签名验签与公钥加解密。',
@@ -52,7 +52,7 @@ zh: {...COMMON,
  't.sm2tamper':'篡改消息后验签失败','t.sm2wrongid':'ID 错误时验签失败','t.sm2enc':'SM2 加密/解密往返',
 },
 en: {...COMMON,
- 'howto.aria':'How to use','howto.1':'Pick an algorithm','howto.2':'Click "Try an example"','howto.3':'Compare with the standard result',
+ 'howto.aria':'How to use','howto.1':'All three algorithms, one page','howto.2':'Click "Try an example"','howto.3':'Compare with the standard result',
  'badge.run':'Checking…','badge.ok':p=>`Self-test ${p.ok}/${p.n}`,'badge.bad':p=>`✗ ${p.ok}/${p.n}`,'badge.aria':'Self-test result (SM3/SM4 against the GB/T vectors, SM2 by round trip), click for details','badge.title':'Self-test: SM3/SM4 against the GB/T vectors, SM2 by round trip',
  'tagline':'Debug SM2/SM3/SM4 in your browser — computed locally, nothing uploaded.','tryEx':'Try an example','nav.test':'Self-test','nav.aria':'Page navigation',
  'sm3.desc':'Compute the SM3 digest (256-bit) of UTF-8 text.','sm4.desc':'Encrypt or decrypt data with SM4 using a 16-byte key (ECB or CBC).','sm2.desc':'Generate an SM2 key pair, sign and verify, and encrypt/decrypt with public/private keys.',
