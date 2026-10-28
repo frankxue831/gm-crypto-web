@@ -34,9 +34,9 @@ checksum = "15b85f9c39137c3a891689859392b1bd49812121d0d61c9caf00d46ed5ce06ae"
 
 [[package]]
 name = "crypto-bigint"
-version = "0.7.5"
+version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a52aa3fcda4e6302a9f48734f234d35d4721b96f8fe07d073f07ce9df4f0271"
+checksum = "9c035cb64cba03dad2fb921f3e218785e8cf9a41790da5eb3a1400f62fa2be11"
 dependencies = [
  "cpubits",
  "ctutils",
@@ -48,9 +48,9 @@ dependencies = [
 
 [[package]]
 name = "ctutils"
-version = "0.4.3"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03bb0e1cc970d482d121d9a1744999169b69a07470b3d644a7894e53fcaf4574"
+checksum = "fe3e9d21d39e6f39ff46e03d5b621424f88ee23d8a1672c6bfc9ccc7f2da4f6a"
 dependencies = [
  "cmov",
  "subtle",
@@ -82,8 +82,8 @@ dependencies = [
 
 [[package]]
 name = "gmcrypto-core"
-version = "1.16.0"
-source = "git+https://github.com/frankxue831/gm-crypto-rs?rev=5562004dcac17409989357d36f45ce7c0d7a48c1#5562004dcac17409989357d36f45ce7c0d7a48c1"
+version = "1.17.0"
+source = "git+https://github.com/frankxue831/gm-crypto-rs?rev=41d54a505071de7103f7ac1c55aa9903479a80cb#41d54a505071de7103f7ac1c55aa9903479a80cb"
 dependencies = [
  "crypto-bigint",
  "rand_core",

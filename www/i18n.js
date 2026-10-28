@@ -1,6 +1,6 @@
 // All user-visible strings. Keys missing from a language render as ⟦key⟧ (tests detect this).
 const COMMON={'enc.hex':'Hex','enc.b64':'Base64','mode.ecb':'ECB','mode.cbc':'CBC','pad.pkcs7':'PKCS#7',
- 'foot.repo':'github.com/frankxue831/gm-crypto-web','foot.libname':'gm-crypto-rs (gmcrypto-core v1.16.0)','foot.license':'MIT / Apache-2.0','w.iv':'IV','nav.sm3':'SM3','nav.sm4':'SM4','nav.sm2':'SM2','kind.hex':'Hex','kind.b64':'Base64','foot.homeLink':'www.frankxue.dev'};
+ 'foot.repo':'github.com/frankxue831/gm-crypto-web','foot.libname':'gm-crypto-rs (gmcrypto-core v1.17.0)','foot.license':'MIT / Apache-2.0','w.iv':'IV','nav.sm3':'SM3','nav.sm4':'SM4','nav.sm2':'SM2','kind.hex':'Hex','kind.b64':'Base64','foot.homeLink':'www.frankxue.dev'};
 export const DICT = {
 zh: {...COMMON,
  'howto.aria':'使用步骤','howto.1':'选算法','howto.2':'点「试一下示例」','howto.3':'对照国标结果',
