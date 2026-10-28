@@ -81,7 +81,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  const v=id=>p.inputValue('#'+id), err=s=>p.textContent('#err-'+s), click=s=>p.click('#'+s);
  await click('ex-sm3');await click('sm3go');chk('example SM3 abc',(await v('sm3out'))==='66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0');
  await click('ex-sm4');await click('sm4enc');chk('example SM4 KAT',(await v('sm4out'))==='681edf34d206965e86b3e94f536e4246',await v('sm4out'));
- await click('ex-sm2');chk('example SM2 pubkey (GB/T A.2)',(await v('sm2p')).startsWith('0409f9df311e5421a150dd7d161e4bc5c672179fad1833fc076bb08ff356f35020'));
+ await click('ex-sm2');chk('example SM2 pubkey (sample key)',(await v('sm2p')).startsWith('0409f9df311e5421a150dd7d161e4bc5c672179fad1833fc076bb08ff356f35020'));
  await click('sm2sign');await click('sm2verify');chk('example SM2 sign→verify',(await p.textContent('#sm2vres')).includes(S.ok),await p.textContent('#sm2vres'));
  await click('sm2enc');await click('sm2dec');chk('example SM2 enc→dec',(await v('sm2pt'))==='message digest');
  await p.click('button[data-copy=sm3out]');await p.waitForFunction(c=>document.querySelector('button[data-copy=sm3out]').textContent===c,S.copied,{timeout:3000}).catch(()=>{});
