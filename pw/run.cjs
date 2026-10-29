@@ -81,7 +81,7 @@ for(const lg of ['zh','en']){const S=L[lg];const [ctx,p]=await newPage(lg==='zh'
  const v=id=>p.inputValue('#'+id), err=s=>p.textContent('#err-'+s), click=s=>p.click('#'+s);
  await click('ex-sm3');await click('sm3go');chk('example SM3 abc',(await v('sm3out'))==='66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0');
  await click('ex-sm4');await click('sm4enc');chk('example SM4 KAT',(await v('sm4out'))==='681edf34d206965e86b3e94f536e4246',await v('sm4out'));
- await click('ex-sm2');chk('example SM2 pubkey (GB/T A.2)',(await v('sm2p')).startsWith('0409f9df311e5421a150dd7d161e4bc5c672179fad1833fc076bb08ff356f35020'));
+ await click('ex-sm2');chk('example SM2 pubkey (sample key)',(await v('sm2p')).startsWith('0409f9df311e5421a150dd7d161e4bc5c672179fad1833fc076bb08ff356f35020'));
  await click('sm2sign');await click('sm2verify');chk('example SM2 sign→verify',(await p.textContent('#sm2vres')).includes(S.ok),await p.textContent('#sm2vres'));
  await click('sm2enc');await click('sm2dec');chk('example SM2 enc→dec',(await v('sm2pt'))==='message digest');
  await p.click('button[data-copy=sm3out]');await p.waitForFunction(c=>document.querySelector('button[data-copy=sm3out]').textContent===c,S.copied,{timeout:3000}).catch(()=>{});
@@ -135,7 +135,7 @@ chk('site header links: zh paths after toggle',(await SITE())==='https://www.fra
 // ---- how-to row + live self-test badge
 {const X=[];const chk=(n,ok,i='')=>X.push({n,ok:!!ok,i:String(i).slice(0,120)});
  const BADGE={zh:{ok:'自检 11/11',run:'自检中…'},en:{ok:'Self-test 11/11',run:'Checking…'}};
- const HOW={zh:['选算法','点「试一下示例」','对照国标结果'],en:['Pick an algorithm','Click "Try an example"','Compare with the standard result']};
+ const HOW={zh:['三种算法同在一页','点「试一下示例」','对照国标结果'],en:['All three algorithms, one page','Click "Try an example"','Compare with the standard result']};
  const mk=async(vp,locale)=>{const o={viewport:vp,locale};if(vp.width<500&&name!=='firefox'){o.isMobile=true;o.hasTouch=true}const ctx=await b.newContext(o);const p=await ctx.newPage();
   p.on('pageerror',e=>allErrs.push(e.message));p.on('console',m=>m.type()==='error'&&allErrs.push(m.text()));return [ctx,p]};
  for(const vp of [{width:1280,height:800},{width:390,height:844}])for(const lg of ['zh','en']){const tag=`${lg} ${vp.width}`;
